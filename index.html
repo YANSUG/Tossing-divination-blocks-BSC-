@@ -65,15 +65,12 @@
             padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s;
         }
         .small-btn:hover { background: rgba(255, 215, 0, 0.3); scale: 1.05; }
-        
-        /* 🔗 推薦按鈕特效 */
         .ref-btn {
             background: linear-gradient(90deg, #FF8C00, #FFD700);
             color: #500000; font-weight: bold; border: none;
             box-shadow: 0 0 10px #FF8C00;
         }
         .ref-btn:hover { box-shadow: 0 0 15px #FFD700; scale: 1.05; }
-
         .btn {
             background: linear-gradient(180deg, #FFD700, #FFA500); border: 1px solid #fff;
             padding: 15px 40px; font-size: 20px; font-weight: bold; color: #800000;
@@ -88,28 +85,42 @@
             background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px 0;
             margin: 20px 0; border: 1px solid #800000; position: relative;
         }
+        
+        /* 🆕 筊杯動畫容器 (圖片版) */
         .jiaobei-wrapper {
             height: 120px; display: flex; justify-content: center; align-items: center;
             gap: 50px; perspective: 800px; position: relative; margin-bottom: 10px;
         }
+        
+        /* 筊杯本體 (圖片容器) */
         .jiaobei {
-            width: 80px; height: 40px; background: #d63031; border-radius: 0 0 40px 40px;
+            width: 140px; height: 70px; /* 調整大小以適應圖片 */
+            background: transparent; 
+            border-radius: 0; 
+            box-shadow: none;
             position: relative; transform-style: preserve-3d;
-            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3); transition: transform 0.5s ease-out;
+            transition: transform 0.5s ease-out;
         }
+        
+        /* 平面 (Yang) - 使用圖片 */
         .jiaobei::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ff7675; border-radius: 0 0 40px 40px;
+            background-image: url('https://i.ibb.co/twv7fJR8/Yang.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
             transform: rotateX(180deg) translateZ(1px); backface-visibility: hidden;
         }
+        
+        /* 凸面 (Yin) - 使用圖片 */
         .jiaobei::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 0 0 40px 40px; background: radial-gradient(circle at 30% 30%, #ff5252, #b71540);
+            background-image: url('https://i.ibb.co/twFczdTG/Yin.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
             transform: translateZ(-1px); backface-visibility: hidden;
         }
+
         .shadow-layer {
-            position: absolute; bottom: 10px; width: 80px; height: 20px;
-            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(5px); z-index: -1;
+            position: absolute; bottom: 10px; width: 100px; height: 20px;
+            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(8px); z-index: -1;
         }
         .integrated-result {
             min-height: 40px; display: flex; flex-direction: column; justify-content: center;
@@ -127,9 +138,10 @@
         .tossing { animation: tumble-up 0.8s infinite linear; }
         .tossing-shadow { animation: shadow-scale 0.8s infinite linear; }
         
-        .state-yin { transform: rotateX(0deg); } 
-        .state-yang { transform: rotateX(180deg); } 
-        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); box-shadow: 0 0 25px #FF00FF; }
+        /* 結果狀態：控制哪個面朝上 */
+        .state-yin { transform: rotateX(0deg); }   /* 凸面朝上 */
+        .state-yang { transform: rotateX(180deg); } /* 平面朝上 */
+        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); filter: drop-shadow(0 0 10px #FF00FF); } /* 立筊+發光 */
 
         .input-group { margin: 10px 0; }
         input {
@@ -144,14 +156,11 @@
         .close-btn { float: right; font-size: 32px; cursor: pointer; color: #aaa; }
         .leader-addr { color: #00FFFF; font-family: monospace; font-size: 20px; font-weight: bold; }
         .leader-section { background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; border: 1px solid #FFD700; text-align: center; margin-bottom: 20px; }
-        
-        /* 歷史榜單 */
         .history-list { margin-top: 20px; font-size: 14px; border-top: 1px solid #555; padding-top: 10px; }
         .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #444; color: #ddd; }
         .history-item:last-child { border-bottom: none; }
         .h-addr { color: #00FFFF; font-family: monospace; }
         .h-val { color: #FFD700; font-weight: bold; }
-
         .hash-box { margin-top: 10px; font-size: 10px; color: #555; }
         .ref-info { font-size: 12px; color: #00FF00; margin-bottom: 5px; display: none; }
 
@@ -298,8 +307,6 @@
     let cachedHighest = 0;
     let myCurrentStreak = 0;
     let countdownInterval;
-    
-    // 🔗 推薦人變數 (預設為 0x0...0)
     let globalReferrer = "0x0000000000000000000000000000000000000000";
 
     async function connectWallet() {
@@ -315,7 +322,6 @@
             document.getElementById("connectBtn").disabled = true; 
             document.getElementById("gameArea").style.display = "block";
 
-            // 🔗 檢查網址是否有 ref 參數
             checkReferralParam(address);
 
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
@@ -333,12 +339,9 @@
         } catch (error) { console.error(error); alert("連結失敗: " + error.message); }
     }
 
-    // --- 🔗 推薦連結邏輯 ---
     function checkReferralParam(myAddr) {
         const urlParams = new URLSearchParams(window.location.search);
         const refParam = urlParams.get('ref');
-        
-        // 檢查 ref 是否存在，且格式正確 (0x開頭, 42碼)，且不是自己
         if (refParam && ethers.utils.isAddress(refParam) && refParam.toLowerCase() !== myAddr.toLowerCase()) {
             globalReferrer = refParam;
             const displayRef = refParam.substring(0, 6) + "..." + refParam.substring(38);
@@ -350,18 +353,13 @@
     async function copyReferralLink() {
         if (!signer) { alert("請先連結錢包！"); return; }
         const myAddr = await signer.getAddress();
-        // 組合當前網址 + ?ref=我的地址
         const baseUrl = window.location.origin + window.location.pathname;
         const refLink = `${baseUrl}?ref=${myAddr}`;
-        
         navigator.clipboard.writeText(refLink).then(() => {
             alert("✅ 連結已複製！\n發送給朋友，他們下注金額的 5% 將自動發送給你！");
-        }, () => {
-            alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr);
-        });
+        }, () => { alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr); });
     }
 
-    // --- 其他核心邏輯 ---
     async function updateAllStats(userAddress) {
         try {
             const balance = await provider.getBalance(userAddress);
@@ -460,7 +458,6 @@
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
             setBlocksState("tossing");
             
-            // 🔗 這裡會傳入 globalReferrer (推薦人地址)
             const tx = await contract.play(globalReferrer, { 
                 value: ethers.utils.parseEther(betInput), gasLimit: 500000 
             });
@@ -506,6 +503,7 @@
 
 </body>
 </html>
+
 
 
 
