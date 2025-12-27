@@ -84,17 +84,27 @@
         .game-stage {
             background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px 0;
             margin: 20px 0; border: 1px solid #800000; position: relative;
+            overflow: hidden; /* 防止放大後超出邊界 */
         }
         
-        /* 🆕 筊杯動畫容器 (圖片版) */
+        /* 🆕 筊杯動畫容器 (調整透視深度) */
         .jiaobei-wrapper {
-            height: 120px; display: flex; justify-content: center; align-items: center;
-            gap: 50px; perspective: 800px; position: relative; margin-bottom: 10px;
+            height: 160px; /* 增加高度以容納更大的筊杯 */
+            display: flex; justify-content: center; align-items: center;
+            gap: 60px; /* 增加間距 */
+            perspective: 1200px; /* 加深 3D 透視感 */
+            position: relative; margin-bottom: 20px;
+        }
+
+        /* 🆕 鏡像關鍵：右側容器水平翻轉 */
+        #wrapB {
+            transform: scaleX(-1);
         }
         
-        /* 筊杯本體 (圖片容器) */
+        /* 🆕 筊杯本體 (放大尺寸) */
         .jiaobei {
-            width: 140px; height: 70px; /* 調整大小以適應圖片 */
+            width: 200px;  /* 變大 */
+            height: 100px; /* 變大 */
             background: transparent; 
             border-radius: 0; 
             box-shadow: none;
@@ -118,30 +128,34 @@
             transform: translateZ(-1px); backface-visibility: hidden;
         }
 
+        /* 🆕 陰影 (配合放大) */
         .shadow-layer {
-            position: absolute; bottom: 10px; width: 100px; height: 20px;
-            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(8px); z-index: -1;
+            position: absolute; bottom: -10px; 
+            width: 160px; /* 陰影變大 */
+            height: 30px;
+            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(10px); z-index: -1;
         }
+
         .integrated-result {
             min-height: 40px; display: flex; flex-direction: column; justify-content: center;
             align-items: center; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* 動畫 Keyframes */
+        /* 動畫 Keyframes (調整飛行高度配合大尺寸) */
         @keyframes tumble-up {
             0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1); }
-            20% { transform: translateY(-80px) rotateX(360deg) rotateY(180deg) rotateZ(45deg) scale(1.1); }
-            60% { transform: translateY(-60px) rotateX(1080deg) rotateY(540deg) rotateZ(180deg) scale(1.05); }
+            20% { transform: translateY(-100px) rotateX(360deg) rotateY(180deg) rotateZ(45deg) scale(1.1); } /* 飛更高 */
+            60% { transform: translateY(-80px) rotateX(1080deg) rotateY(540deg) rotateZ(180deg) scale(1.05); }
             100% { transform: translateY(0) rotateX(1800deg) rotateY(900deg) rotateZ(360deg) scale(1); }
         }
         @keyframes shadow-scale { 0%, 100% { opacity: 0.8; transform: scale(1); } 20%, 40% { opacity: 0.3; transform: scale(0.6); } }
         .tossing { animation: tumble-up 0.8s infinite linear; }
         .tossing-shadow { animation: shadow-scale 0.8s infinite linear; }
         
-        /* 結果狀態：控制哪個面朝上 */
+        /* 結果狀態 */
         .state-yin { transform: rotateX(0deg); }   /* 凸面朝上 */
         .state-yang { transform: rotateX(180deg); } /* 平面朝上 */
-        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); filter: drop-shadow(0 0 10px #FF00FF); } /* 立筊+發光 */
+        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); filter: drop-shadow(0 0 15px #FF00FF); } /* 立筊光暈加大 */
 
         .input-group { margin: 10px 0; }
         input {
@@ -209,11 +223,11 @@
 
         <div class="game-stage">
             <div class="jiaobei-wrapper">
-                <div style="position: relative;">
+                <div id="wrapA" style="position: relative;">
                     <div id="blockA" class="jiaobei state-yin"></div>
                     <div id="shadowA" class="shadow-layer"></div>
                 </div>
-                <div style="position: relative;">
+                <div id="wrapB" style="position: relative;">
                     <div id="blockB" class="jiaobei state-yang"></div>
                     <div id="shadowB" class="shadow-layer"></div>
                 </div>
@@ -503,6 +517,7 @@
 
 </body>
 </html>
+
 
 
 
