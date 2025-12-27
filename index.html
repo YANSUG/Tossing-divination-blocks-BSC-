@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧧 金蛇迎春：鏈上擲筊博黃金 🧧</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" integrity="sha512-FDcVY+g7vc55I8ZYJZeQwWP+VAgghTiF9pr0Falo7tBvr2wMcbQYpKp0nSEx4q98+Jf/pcc9vF04q16T7jgwDTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <style>
         body {
             background-color: #800000; /* 過年紅 */
@@ -16,7 +18,7 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6); /* 加深背景 */
             padding: 20px;
             border-radius: 15px;
             border: 2px solid #FFD700;
@@ -34,8 +36,11 @@
             border-radius: 50px;
             margin: 10px;
             transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .btn:active { transform: scale(0.95); }
+        .btn:disabled { background: #555; color: #888; cursor: not-allowed; }
+        
         .input-group { margin: 20px 0; }
         input {
             padding: 10px;
@@ -48,13 +53,13 @@
             width: 150px;
         }
         
-        /* --- 關鍵：顯示亂碼的區域 --- */
+        /* 亂碼顯示區 */
         .hash-box {
             background-color: #000;
             color: #00FF00; /* 駭客綠 */
             font-family: 'Courier New', monospace;
             padding: 10px;
-            margin: 10px 0;
+            margin: 15px 0;
             border-radius: 5px;
             font-size: 12px;
             word-break: break-all;
@@ -69,22 +74,34 @@
             font-size: 24px;
             font-weight: bold;
             margin-top: 20px;
-            min-height: 100px;
+            min-height: 120px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .gold-text {
             color: #fff;
             font-size: 16px;
-            margin-top: 5px;
+            margin-top: 10px;
+            background: rgba(218, 165, 32, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
         }
         .stats {
             display: flex;
             justify-content: space-around;
             background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
+            padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
         }
+        
         /* 動畫特效 */
         @keyframes flash {
             0% { opacity: 1; transform: scale(1); }
@@ -93,9 +110,13 @@
         }
         .critical {
             color: #FF00FF;
-            text-shadow: 0 0 10px #FF00FF;
+            text-shadow: 0 0 15px #FF00FF;
             animation: flash 0.5s infinite;
+            font-size: 28px;
         }
+        .sheng-jiao { color: #FFD700; text-shadow: 0 0 10px #FFD700; }
+        .xiao-jiao { color: #FFA500; }
+        .yin-jiao { color: #aaa; }
     </style>
 </head>
 <body>
@@ -105,11 +126,11 @@
     <p>連結錢包 -> 輸入金額 -> 擲出聖筊拿黃金！</p>
     
     <div class="stats">
-        <div>💰 你的餘額: <span id="userBalance">---</span> BNB</div>
-        <div>🔥 你的連勝: <span id="userStreak">0</span></div>
+        <div>💰 餘額: <span id="userBalance">---</span> BNB</div>
+        <div>🔥 連勝: <span id="userStreak">0</span></div>
     </div>
 
-    <button id="connectBtn" class="btn" onclick="connectWallet()">連結錢包 (Connect)</button>
+    <button id="connectBtn" class="btn" onclick="connectWallet()">🦊 連結錢包 (Connect)</button>
     
     <div id="gameArea" style="display:none;">
         <div class="input-group">
@@ -120,26 +141,27 @@
         <button id="playBtn" class="btn" onclick="playGame()">🙏 誠心擲筊 (Play)</button>
 
         <div class="hash-box" id="hashDisplay">
-            [ 等待區塊鏈隨機數生成... ]
+            [ 請先擲筊，等待區塊鏈生成隨機碼... ]
         </div>
 
         <div class="result-area" id="resultDisplay">
-            準備好了嗎？
+            準備好了嗎？<br>虎爺看著你呢...
         </div>
     </div>
 </div>
 
 <script>
     // ==========================================
-    // ⚠️ 請在這裡填入你剛剛部署好的合約地址
+    // ⚠️⚠️⚠️ 請在這裡填入你的合約地址 ⚠️⚠️⚠️
     // ==========================================
-    const CONTRACT_ADDRESS = "請填入你的合約地址(0x.....)"; 
-    
-    // 假定匯率 (實際上應該接 API)
+    const CONTRACT_ADDRESS = "請在此處貼上你的0x開頭合約地址"; 
+    // 例如: const CONTRACT_ADDRESS = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B";
+
+    // 假定匯率 (前端顯示用)
     const BNB_PRICE_USD = 620; 
     const GOLD_PRICE_USD_PER_GRAM = 85; 
 
-    // 合約介面 (ABI) - 只列出前端需要的函數
+    // 合約介面 (ABI)
     const ABI = [
         "function play(address referrer) external payable",
         "function userStreaks(address) view returns (uint256, uint256, uint256, uint256)",
@@ -150,120 +172,155 @@
 
     async function connectWallet() {
         if (!window.ethereum) {
-            alert("請安裝 MetaMask!");
+            alert("請安裝 MetaMask 錢包擴充功能!");
             return;
         }
+        
+        // 檢查是否載入 ethers
+        if (typeof ethers === 'undefined') {
+            alert("Ethers.js 載入失敗，請檢查網路連線或重新整理頁面。");
+            return;
+        }
+
         try {
             provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []); // 請求授權
+            
+            // 請求用戶授權
+            await provider.send("eth_requestAccounts", []); 
             signer = provider.getSigner();
             
             const address = await signer.getAddress();
-            const balance = await provider.getBalance(address);
             
+            // 更新按鈕文字
             document.getElementById("connectBtn").innerText = "✅ 已連結: " + address.substring(0,6) + "...";
-            document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
+            document.getElementById("connectBtn").disabled = true; // 防止重複點擊
+            
+            // 顯示遊戲區域
             document.getElementById("gameArea").style.display = "block";
 
             // 初始化合約
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
             
-            // 讀取連勝狀態
-            loadStreak(address);
+            // 讀取數據
+            await updateStats(address);
             
-            // --- 監聽事件 (最關鍵的部分) ---
-            setupEventListener();
+            // 啟動事件監聽
+            setupEventListener(address);
 
         } catch (error) {
             console.error(error);
-            alert("連結失敗: " + error.message);
+            alert("連結失敗: " + (error.message || "未知錯誤"));
         }
     }
 
     async function loadStreak(address) {
         try {
+            // 對應合約 struct: currentStreak, lastPlayTime, lastPlayBlock, nonce
             const streakData = await contract.userStreaks(address);
             document.getElementById("userStreak").innerText = streakData[0].toString();
-        } catch (e) { console.log(e); }
+        } catch (e) { 
+            console.log("讀取連勝失敗 (可能是新用戶):", e); 
+        }
+    }
+
+    async function updateStats(address) {
+        try {
+            const balance = await provider.getBalance(address);
+            document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
+            await loadStreak(address);
+        } catch (e) { console.error(e); }
     }
 
     async function playGame() {
         if (!contract) return;
         
         const betValue = document.getElementById("betAmount").value;
+        // 檢查最小金額
+        if (parseFloat(betValue) < 0.001) {
+            alert("最小下注金額為 0.001 BNB");
+            return;
+        }
+
         const referrer = "0x0000000000000000000000000000000000000000"; // 暫無推薦人
 
         try {
-            document.getElementById("resultDisplay").innerHTML = "🎲 擲筊中...<br><span style='font-size:14px; color:#ccc'>等待區塊確認 (約3秒)</span>";
-            document.getElementById("hashDisplay").innerText = "Generating Hash on-chain...";
+            // UI 更新
+            document.getElementById("resultDisplay").innerHTML = "🎲 擲筊中...<br><span style='font-size:16px; color:#FFD700'>請在錢包確認交易...</span>";
+            document.getElementById("hashDisplay").innerText = "等待區塊鏈確認中...";
             document.getElementById("playBtn").disabled = true;
+            document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
 
             // 發送交易
             const tx = await contract.play(referrer, { 
                 value: ethers.utils.parseEther(betValue) 
             });
             
-            console.log("交易發送:", tx.hash);
-            // 這裡我們不等 tx.wait() 完成才顯示結果，而是依賴 Event Listener 比較快
-            await tx.wait(); // 等待上鏈
+            console.log("交易已發送:", tx.hash);
+            document.getElementById("resultDisplay").innerHTML = "🚀 交易已發送！<br><span style='font-size:16px; color:#ccc'>等待區塊打包 (約3秒)...</span>";
             
+            // 等待上鏈
+            await tx.wait();
+            // 注意：結果顯示交給 setupEventListener 處理，這裡只負責送出
+
         } catch (error) {
             console.error(error);
-            alert("交易失敗: " + (error.data?.message || error.message));
-            document.getElementById("resultDisplay").innerText = "❌ 交易取消或失敗";
+            // 錯誤處理
+            let msg = error.data?.message || error.message;
+            if (msg.includes("insufficient funds")) msg = "餘額不足！";
+            if (msg.includes("user rejected")) msg = "使用者取消交易";
+            
+            alert("交易失敗: " + msg);
+            document.getElementById("resultDisplay").innerText = "❌ 交易未完成";
+            
+            // 重置按鈕
             document.getElementById("playBtn").disabled = false;
+            document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
         }
     }
 
-    // --- 監聽合約事件來顯示結果 ---
-    function setupEventListener() {
+    function setupEventListener(myAddress) {
+        // 監聽 GameResult 事件
         contract.on("GameResult", (player, resultType, payout, rawRandom, betAmount, gameHash) => {
             
-            // 確認是當前玩家的事件
-            signer.getAddress().then(myAddr => {
-                if (player.toLowerCase() === myAddr.toLowerCase()) {
-                    
-                    // 1. 顯示駭客亂碼 (Hash)
-                    document.getElementById("hashDisplay").innerText = gameHash;
-                    
-                    // 2. 計算黃金重量
-                    const payoutBNB = ethers.utils.formatEther(payout);
-                    const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
-                    
-                    // 3. 顯示結果文字與特效
-                    let resultHtml = "";
-                    let color = "white";
-                    
-                    if (resultType.includes("Li Jiao")) {
-                        // 立筊暴擊
-                        resultHtml = `<div class='critical'>⚡ 天降祥瑞！立筊暴擊 (8X) ⚡</div>`;
-                        resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
-                    } else if (resultType.includes("Sheng Jiao")) {
-                        // 聖筊
-                        resultHtml = `<div style='color:#FFD700'>🙏 聖筊！獲利翻倍 (2X)</div>`;
-                        resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
-                    } else if (resultType.includes("Xiao Jiao")) {
-                        // 笑筊
-                        resultHtml = `<div style='color:#FFA500'>😊 笑筊 - 虎爺笑了 (退回一半)</div>`;
-                    } else {
-                        // 陰筊
-                        resultHtml = `<div style='color:#ccc'>🌑 陰筊 - 下次好運</div>`;
-                    }
-                    
-                    document.getElementById("resultDisplay").innerHTML = resultHtml;
-                    
-                    // 刷新餘額與連勝
-                    updateStats(myAddr);
-                    document.getElementById("playBtn").disabled = false;
+            // 只處理當前用戶的事件
+            if (player.toLowerCase() === myAddress.toLowerCase()) {
+                
+                // 1. 顯示雜湊亂碼
+                document.getElementById("hashDisplay").innerText = gameHash;
+                
+                // 2. 計算黃金
+                const payoutBNB = ethers.utils.formatEther(payout);
+                const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
+                
+                // 3. 顯示結果文字與特效
+                let resultHtml = "";
+                
+                if (resultType.includes("Li Jiao")) {
+                    // 立筊暴擊
+                    resultHtml = `<div class='critical'>⚡ 天降祥瑞！立筊暴擊 (8X) ⚡</div>`;
+                    resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
+                } else if (resultType.includes("Sheng Jiao")) {
+                    // 聖筊
+                    resultHtml = `<div class='sheng-jiao'>🙏 聖筊！獲利翻倍 (2X)</div>`;
+                    resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
+                } else if (resultType.includes("Xiao Jiao")) {
+                    // 笑筊
+                    resultHtml = `<div class='xiao-jiao'>😊 笑筊 - 虎爺笑了 (退回一半)</div>`;
+                    resultHtml += `<div style='font-size:14px; margin-top:5px;'>連勝中斷</div>`;
+                } else {
+                    // 陰筊
+                    resultHtml = `<div class='yin-jiao'>🌑 陰筊 - 下次好運</div>`;
+                    resultHtml += `<div style='font-size:14px; margin-top:5px;'>連勝歸零</div>`;
                 }
-            });
+                
+                document.getElementById("resultDisplay").innerHTML = resultHtml;
+                
+                // 4. 更新狀態並重置按鈕
+                updateStats(myAddress);
+                document.getElementById("playBtn").disabled = false;
+                document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
+            }
         });
-    }
-    
-    async function updateStats(address) {
-        const balance = await provider.getBalance(address);
-        document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
-        loadStreak(address);
     }
 
 </script>
