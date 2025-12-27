@@ -9,9 +9,9 @@
 
     <style>
         body {
-            background-color: #500000; /* 深紅背景 */
+            background-color: #500000;
             background-image: linear-gradient(135deg, #800000 25%, #500000 100%);
-            color: #FFD700; /* 黃金色 */
+            color: #FFD700;
             font-family: 'Microsoft JhengHei', sans-serif;
             text-align: center;
             padding: 20px;
@@ -27,9 +27,8 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
         }
         h1 { margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
-        p { color: #ccc; font-size: 14px; margin-bottom: 20px; }
-
-        /* --- 新增：儀表板樣式 --- */
+        
+        /* 儀表板 */
         .dashboard {
             background: linear-gradient(to bottom, #330000, #1a0000);
             border: 1px solid #FFA500;
@@ -52,7 +51,7 @@
         .highlight-val { color: #00FF00; font-weight: bold; font-family: monospace; font-size: 16px; }
         .winner-addr { color: #00FFFF; font-family: monospace; }
 
-        /* 按鈕樣式 */
+        /* 按鈕 */
         .btn {
             background: linear-gradient(180deg, #FFD700, #FFA500);
             border: 1px solid #fff;
@@ -67,10 +66,9 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             width: 80%;
         }
-        .btn:active { transform: scale(0.95); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .btn:active { transform: scale(0.95); }
         .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; }
         
-        /* 輸入框與提示 */
         .input-group { margin: 20px 0 10px 0; }
         input {
             padding: 12px;
@@ -83,13 +81,8 @@
             width: 180px;
             font-weight: bold;
         }
-        .max-bet-hint {
-            font-size: 13px;
-            color: #FFA500;
-            margin-top: 5px;
-        }
+        .max-bet-hint { font-size: 13px; color: #FFA500; margin-top: 5px; }
         
-        /* 亂碼顯示區 */
         .hash-box {
             background-color: #000;
             color: #00FF00;
@@ -101,10 +94,8 @@
             word-break: break-all;
             min-height: 20px;
             border: 1px solid #333;
-            text-shadow: 0 0 5px #00FF00;
         }
 
-        /* 結果顯示區 */
         .result-area {
             margin-top: 20px;
             min-height: 120px;
@@ -127,7 +118,6 @@
             border-radius: 20px;
         }
         
-        /* 個人數據條 */
         .my-stats {
             display: flex;
             justify-content: space-around;
@@ -195,16 +185,14 @@
 </div>
 
 <script>
-    // ==========================================
-    // ✅ 合約地址 (已填入)
-    // ==========================================
+    // ✅ 合約地址
     const CONTRACT_ADDRESS = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B"; 
 
     // 匯率
     const BNB_PRICE_USD = 620; 
     const GOLD_PRICE_USD_PER_GRAM = 85; 
 
-    // ✅ 更新後的 ABI (加入讀取榜單的函數)
+    // ABI
     const ABI = [
         "function play(address referrer) external payable",
         "function userStreaks(address) view returns (uint256, uint256, uint256, uint256)",
@@ -215,7 +203,7 @@
     ];
 
     let provider, signer, contract;
-    let currentMaxBet = 0; // 用於驗證
+    let currentMaxBet = 0; 
 
     async function connectWallet() {
         if (typeof ethers === 'undefined') { alert("Ethers.js 載入失敗"); return; }
@@ -233,9 +221,10 @@
 
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
             
-            // 初始化數據
             await updateAllStats(address);
-            setupEventListener(address);
+            
+            // 監聽全局事件 (僅用於更新榜單，不處理個人結果)
+            contract.on("GameResult", () => { updateAllStats(address); });
 
         } catch (error) {
             console.error(error);
@@ -243,17 +232,14 @@
         }
     }
 
-    // --- 核心：更新所有數據 (包含最大下注計算) ---
     async function updateAllStats(userAddress) {
         try {
-            // 1. 用戶餘額與連勝
             const balance = await provider.getBalance(userAddress);
             document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
             
             const uStreak = await contract.userStreaks(userAddress);
             document.getElementById("userStreak").innerText = uStreak[0].toString();
 
-            // 2. 全局榜單數據
             const sPool = await contract.streakPoolBalance();
             const hStreak = await contract.highestStreak();
             const winner = await contract.currentWeeklyWinner();
@@ -261,22 +247,18 @@
             document.getElementById("streakPool").innerText = parseFloat(ethers.utils.formatEther(sPool)).toFixed(4);
             document.getElementById("highestStreak").innerText = hStreak.toString();
             
-            // 地址縮寫處理
             if (winner === "0x0000000000000000000000000000000000000000") {
                 document.getElementById("weeklyWinner").innerText = "尚無 (虛位以待)";
             } else {
                 document.getElementById("weeklyWinner").innerText = winner.substring(0,6) + "..." + winner.substring(38);
             }
 
-            // 3. 計算最大下注額 (1/10 規則)
-            // 公式：(合約總餘額 - 連勝池) / 10
             const contractBalance = await provider.getBalance(CONTRACT_ADDRESS);
             const availablePool = contractBalance.sub(sPool);
             const maxBetBNB = availablePool.div(10);
             
             currentMaxBet = parseFloat(ethers.utils.formatEther(maxBetBNB));
             
-            // UI 顯示
             const hintEl = document.getElementById("maxBetDisplay");
             if (currentMaxBet <= 0.001) {
                 hintEl.innerHTML = `⚠️ 池底乾枯，僅限下注 <span style='color:#fff'>0.001</span> BNB`;
@@ -289,13 +271,13 @@
         } catch (e) { console.error("Update Stats Error:", e); }
     }
 
+    // --- 核心修改：改用 Receipt 解析，不再被動等待 ---
     async function playGame() {
         if (!contract) return;
         
         const betInput = document.getElementById("betAmount").value;
         const betValue = parseFloat(betInput);
 
-        // 前端初步檢查
         if (betValue < 0.001) { alert("最小下注金額為 0.001 BNB"); return; }
         if (betValue > currentMaxBet && currentMaxBet > 0.001) {
              alert(`金額過大！當前最大限制為 ${currentMaxBet.toFixed(4)} BNB`);
@@ -317,54 +299,61 @@
             console.log("Tx Hash:", tx.hash);
             document.getElementById("resultDisplay").innerHTML = "🚀 交易已發送！<br><span style='font-size:16px; color:#ccc'>等待區塊打包 (約3秒)...</span>";
             
-            await tx.wait();
+            // ⚠️ 關鍵修正：等待並直接解析收據
+            const receipt = await tx.wait();
+            
+            // 從收據中找到 GameResult 事件
+            const event = receipt.events.find(e => e.event === 'GameResult');
+            
+            if (event) {
+                // 直接使用這裡的數據更新 UI，不依賴 Event Listener
+                displayResult(event.args);
+            } else {
+                throw new Error("未找到遊戲結果事件");
+            }
 
         } catch (error) {
             console.error(error);
             let msg = error.data?.message || error.message;
             if (msg.includes("insufficient funds")) msg = "餘額不足！";
             if (msg.includes("Bet too large")) msg = "下注金額超過池子 1/10 限制！";
-            if (msg.includes("user rejected")) msg = "使用者取消交易";
             
             alert("交易失敗: " + msg);
             document.getElementById("resultDisplay").innerText = "❌ 交易未完成";
+        } finally {
+            // 無論成功失敗，都重置按鈕
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
         }
     }
 
-    function setupEventListener(myAddress) {
-        contract.on("GameResult", (player, resultType, payout, rawRandom, betAmount, gameHash) => {
-            
-            // 只要有任何人玩，就更新全局榜單 (讓玩家看到獎池變動)
-            updateAllStats(myAddress);
-
-            if (player.toLowerCase() === myAddress.toLowerCase()) {
-                document.getElementById("hashDisplay").innerText = gameHash;
-                
-                const payoutBNB = ethers.utils.formatEther(payout);
-                const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
-                
-                let resultHtml = "";
-                if (resultType.includes("Li Jiao")) {
-                    resultHtml = `<div class='critical'>⚡ 天降祥瑞！立筊暴擊 (8X) ⚡</div>`;
-                    resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
-                } else if (resultType.includes("Sheng Jiao")) {
-                    resultHtml = `<div class='sheng-jiao'>🙏 聖筊！獲利翻倍 (2X)</div>`;
-                    resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
-                } else if (resultType.includes("Xiao Jiao")) {
-                    resultHtml = `<div class='xiao-jiao'>😊 笑筊 - 虎爺笑了 (退回一半)</div>`;
-                    resultHtml += `<div style='font-size:16px; margin-top:5px; color:#ccc'>連勝中斷</div>`;
-                } else {
-                    resultHtml = `<div class='yin-jiao'>🌑 陰筊 - 下次好運</div>`;
-                    resultHtml += `<div style='font-size:16px; margin-top:5px; color:#ccc'>連勝歸零</div>`;
-                }
-                
-                document.getElementById("resultDisplay").innerHTML = resultHtml;
-                document.getElementById("playBtn").disabled = false;
-                document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
-            }
-        });
+    function displayResult(args) {
+        const { resultType, payout, gameHash } = args;
+        
+        document.getElementById("hashDisplay").innerText = gameHash;
+        
+        const payoutBNB = ethers.utils.formatEther(payout);
+        const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
+        
+        let resultHtml = "";
+        if (resultType.includes("Li Jiao")) {
+            resultHtml = `<div class='critical'>⚡ 天降祥瑞！立筊暴擊 (8X) ⚡</div>`;
+            resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
+        } else if (resultType.includes("Sheng Jiao")) {
+            resultHtml = `<div class='sheng-jiao'>🙏 聖筊！獲利翻倍 (2X)</div>`;
+            resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
+        } else if (resultType.includes("Xiao Jiao")) {
+            resultHtml = `<div class='xiao-jiao'>😊 笑筊 - 虎爺笑了 (退回一半)</div>`;
+            resultHtml += `<div style='font-size:16px; margin-top:5px; color:#ccc'>連勝中斷</div>`;
+        } else {
+            resultHtml = `<div class='yin-jiao'>🌑 陰筊 - 下次好運</div>`;
+            resultHtml += `<div style='font-size:16px; margin-top:5px; color:#ccc'>連勝歸零</div>`;
+        }
+        
+        document.getElementById("resultDisplay").innerHTML = resultHtml;
+        
+        // 順便更新一下餘額
+        signer.getAddress().then(addr => updateAllStats(addr));
     }
 </script>
 
