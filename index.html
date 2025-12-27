@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 
     <style>
+        /* --- 基礎樣式 --- */
         body {
             background-color: #500000;
             background-image: linear-gradient(135deg, #800000 25%, #500000 100%);
@@ -16,6 +17,7 @@
             text-align: center;
             padding: 20px;
             min-height: 100vh;
+            margin: 0;
         }
         .container {
             max-width: 600px;
@@ -25,16 +27,17 @@
             border-radius: 20px;
             border: 2px solid #FFD700;
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            position: relative;
         }
         h1 { margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
         
-        /* 儀表板 */
+        /* --- 儀表板區域 --- */
         .dashboard {
             background: linear-gradient(to bottom, #330000, #1a0000);
             border: 1px solid #FFA500;
             border-radius: 10px;
             padding: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -49,9 +52,39 @@
         }
         .dashboard-row:last-child { border-bottom: none; padding-bottom: 0; }
         .highlight-val { color: #00FF00; font-weight: bold; font-family: monospace; font-size: 16px; }
-        .winner-addr { color: #00FFFF; font-family: monospace; }
 
-        /* 按鈕 */
+        /* --- 個人數據 --- */
+        .my-stats {
+            display: flex;
+            justify-content: space-around;
+            background: #400000;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #800000;
+        }
+
+        /* --- 功能按鈕區 (排行榜/規則) --- */
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .small-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            color: #FFD700;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .small-btn:hover { background: rgba(255, 215, 0, 0.3); }
+
+        /* --- 主按鈕 --- */
         .btn {
             background: linear-gradient(180deg, #FFD700, #FFA500);
             border: 1px solid #fff;
@@ -69,6 +102,7 @@
         .btn:active { transform: scale(0.95); }
         .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; }
         
+        /* --- 輸入框 --- */
         .input-group { margin: 20px 0 10px 0; }
         input {
             padding: 12px;
@@ -83,6 +117,7 @@
         }
         .max-bet-hint { font-size: 13px; color: #FFA500; margin-top: 5px; }
         
+        /* --- 結果與亂碼 --- */
         .hash-box {
             background-color: #000;
             color: #00FF00;
@@ -95,7 +130,6 @@
             min-height: 20px;
             border: 1px solid #333;
         }
-
         .result-area {
             margin-top: 20px;
             min-height: 120px;
@@ -117,19 +151,49 @@
             padding: 5px 12px;
             border-radius: 20px;
         }
-        
-        .my-stats {
-            display: flex;
-            justify-content: space-around;
-            background: #400000;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            border: 1px solid #800000;
-        }
 
-        /* 特效 */
+        /* --- 彈出視窗 (Modal) --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 100; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #300000;
+            border: 2px solid #FFD700;
+            margin: 15% auto; 
+            padding: 20px;
+            width: 80%; 
+            max-width: 400px;
+            border-radius: 15px;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 0 20px #FFD700;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: #fff; }
+        .modal-h2 { text-align: center; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0;}
+        .rule-item { margin-bottom: 10px; font-size: 14px; line-height: 1.6; }
+        .leader-item { 
+            text-align: center; margin: 20px 0; 
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;
+        }
+        .leader-addr { color: #00FFFF; font-family: monospace; font-size: 18px; display: block; margin-bottom: 5px;}
+        .leader-val { font-size: 24px; color: #FFD700; font-weight: bold; }
+
+        /* --- 特效 --- */
         @keyframes flash { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
         .critical { color: #FF00FF; text-shadow: 0 0 15px #FF00FF; animation: flash 0.4s infinite; font-size: 26px; }
         .sheng-jiao { color: #FFD700; text-shadow: 0 0 10px #FFD700; }
@@ -141,17 +205,9 @@
 
 <div class="container">
     <h1>🐯 虎爺賜福擲筊台 🐯</h1>
-    <p>連結錢包 -> 輸入金額 -> 擲出聖筊拿黃金！</p>
+    <p style="color:#ccc; font-size:14px;">連結錢包 -> 輸入金額 -> 擲出聖筊拿黃金！</p>
     
     <div class="dashboard">
-        <div class="dashboard-row">
-            <span>🏆 當週連勝王:</span>
-            <span class="winner-addr" id="weeklyWinner">---</span>
-        </div>
-        <div class="dashboard-row">
-            <span>🔥 最高連勝紀錄:</span>
-            <span class="highlight-val" id="highestStreak">0</span>
-        </div>
         <div class="dashboard-row">
             <span>💎 連勝累積獎池:</span>
             <span><span class="highlight-val" id="streakPool">0.0000</span> BNB</span>
@@ -161,6 +217,11 @@
     <div class="my-stats">
         <div>💰 餘額: <span id="userBalance" style="color:#fff">---</span></div>
         <div>🎲 連勝: <span id="userStreak" style="color:#fff">0</span></div>
+    </div>
+
+    <div class="action-bar">
+        <button class="small-btn" onclick="openLeaderboard()">🏆 查看連勝霸主</button>
+        <button class="small-btn" onclick="openRules()">📜 遊戲規則說明</button>
     </div>
 
     <button id="connectBtn" class="btn" onclick="connectWallet()">🦊 連結錢包 (Connect)</button>
@@ -184,8 +245,65 @@
     </div>
 </div>
 
+<div id="leaderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('leaderModal')">&times;</span>
+        <h2 class="modal-h2">🏆 當週連勝霸主</h2>
+        
+        <div class="leader-item">
+            <div style="color:#aaa; font-size:12px;">霸主地址 (Winner)</div>
+            <span class="leader-addr" id="modalWinnerAddr">---</span>
+        </div>
+        
+        <div class="leader-item">
+            <div style="color:#aaa; font-size:12px;">最高連勝次數 (Streak)</div>
+            <span class="leader-val" id="modalHighestStreak">0</span>
+            <div style="font-size:12px; color:#FFD700; margin-top:5px;">次</div>
+        </div>
+        
+        <div style="text-align:center; font-size:12px; color:#ccc;">
+            * 週結算時霸主將獨得 80% 連勝獎池
+        </div>
+    </div>
+</div>
+
+<div id="rulesModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('rulesModal')">&times;</span>
+        <h2 class="modal-h2">📜 遊戲規則說明</h2>
+        
+        <div class="rule-item">
+            <strong style="color:#FFD700">【機率與賠率】</strong><br>
+            ⚡ <strong>立筊 (8倍)</strong>：0.25% 機率 (暴擊)<br>
+            🙏 <strong>聖筊 (2倍)</strong>：24.75% 機率 (獲勝)<br>
+            😊 <strong>笑筊 (0.5倍)</strong>：40% 機率 (退還一半)<br>
+            🌑 <strong>陰筊 (0倍)</strong>：35% 機率 (未中獎)
+        </div>
+        
+        <div class="rule-item">
+            <strong style="color:#FFD700">【連勝機制】</strong><br>
+            只有 <strong>聖筊</strong> 與 <strong>立筊</strong> 累積連勝。<br>
+            擲出 笑筊 或 陰筊，連勝將立即歸零。
+        </div>
+
+        <div class="rule-item">
+            <strong style="color:#FFD700">【下注限制】</strong><br>
+            最小下注：0.001 BNB<br>
+            最大下注：當前獎池的 1/10 (動態調整)
+        </div>
+
+        <div class="rule-item">
+            <strong style="color:#FFD700">【資金分配】</strong><br>
+            75% 進入擲筊獎池<br>
+            10% 進入連勝獎池<br>
+            10% 供奉年獸 (累積大獎)<br>
+            5% 推薦人獎勵 (無推薦人則入連勝池)
+        </div>
+    </div>
+</div>
+
 <script>
-    // ✅ 合約地址
+    // ✅ 合約地址 (已填入)
     const CONTRACT_ADDRESS = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B"; 
 
     // 匯率
@@ -204,6 +322,10 @@
 
     let provider, signer, contract;
     let currentMaxBet = 0; 
+    
+    // 暫存榜單數據
+    let cachedWinner = "---";
+    let cachedHighest = 0;
 
     async function connectWallet() {
         if (typeof ethers === 'undefined') { alert("Ethers.js 載入失敗"); return; }
@@ -223,7 +345,7 @@
             
             await updateAllStats(address);
             
-            // 監聽全局事件 (僅用於更新榜單，不處理個人結果)
+            // 監聽全局事件 (僅用於更新榜單)
             contract.on("GameResult", () => { updateAllStats(address); });
 
         } catch (error) {
@@ -234,25 +356,27 @@
 
     async function updateAllStats(userAddress) {
         try {
+            // 1. 用戶數據
             const balance = await provider.getBalance(userAddress);
             document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
             
             const uStreak = await contract.userStreaks(userAddress);
             document.getElementById("userStreak").innerText = uStreak[0].toString();
 
+            // 2. 榜單數據 (存入變數，彈窗時顯示)
             const sPool = await contract.streakPoolBalance();
-            const hStreak = await contract.highestStreak();
+            cachedHighest = await contract.highestStreak();
             const winner = await contract.currentWeeklyWinner();
 
             document.getElementById("streakPool").innerText = parseFloat(ethers.utils.formatEther(sPool)).toFixed(4);
-            document.getElementById("highestStreak").innerText = hStreak.toString();
             
             if (winner === "0x0000000000000000000000000000000000000000") {
-                document.getElementById("weeklyWinner").innerText = "尚無 (虛位以待)";
+                cachedWinner = "尚無 (虛位以待)";
             } else {
-                document.getElementById("weeklyWinner").innerText = winner.substring(0,6) + "..." + winner.substring(38);
+                cachedWinner = winner;
             }
 
+            // 3. 最大下注額
             const contractBalance = await provider.getBalance(CONTRACT_ADDRESS);
             const availablePool = contractBalance.sub(sPool);
             const maxBetBNB = availablePool.div(10);
@@ -271,7 +395,7 @@
         } catch (e) { console.error("Update Stats Error:", e); }
     }
 
-    // --- 核心修改：改用 Receipt 解析，不再被動等待 ---
+    // --- 遊戲邏輯 (含 Gas Fix) ---
     async function playGame() {
         if (!contract) return;
         
@@ -292,36 +416,41 @@
             document.getElementById("playBtn").disabled = true;
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
 
+            // ⚠️ 強制 Gas Limit: 500000 (防交易失敗)
             const tx = await contract.play(referrer, { 
-                value: ethers.utils.parseEther(betInput) 
+                value: ethers.utils.parseEther(betInput),
+                gasLimit: 500000 
             });
             
             console.log("Tx Hash:", tx.hash);
             document.getElementById("resultDisplay").innerHTML = "🚀 交易已發送！<br><span style='font-size:16px; color:#ccc'>等待區塊打包 (約3秒)...</span>";
             
-            // ⚠️ 關鍵修正：等待並直接解析收據
+            // 等待並讀取收據 (Receipt)
             const receipt = await tx.wait();
             
-            // 從收據中找到 GameResult 事件
+            // 尋找 GameResult 事件
             const event = receipt.events.find(e => e.event === 'GameResult');
             
             if (event) {
-                // 直接使用這裡的數據更新 UI，不依賴 Event Listener
                 displayResult(event.args);
             } else {
-                throw new Error("未找到遊戲結果事件");
+                // 防呆：如果沒抓到事件，至少刷新餘額
+                signer.getAddress().then(addr => updateAllStats(addr));
+                document.getElementById("resultDisplay").innerText = "✅ 交易成功！(請查看餘額變化)";
             }
 
         } catch (error) {
             console.error(error);
-            let msg = error.data?.message || error.message;
-            if (msg.includes("insufficient funds")) msg = "餘額不足！";
+            let msg = error.data?.message || error.message || JSON.stringify(error);
+            
+            if (msg.includes("insufficient funds")) msg = "錢包餘額不足！";
+            if (msg.includes("One bet per block")) msg = "手速太快囉！一個區塊只能玩一次";
             if (msg.includes("Bet too large")) msg = "下注金額超過池子 1/10 限制！";
+            if (msg.includes("user rejected")) msg = "使用者取消交易";
             
             alert("交易失敗: " + msg);
             document.getElementById("resultDisplay").innerText = "❌ 交易未完成";
         } finally {
-            // 無論成功失敗，都重置按鈕
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
         }
@@ -351,11 +480,32 @@
         }
         
         document.getElementById("resultDisplay").innerHTML = resultHtml;
-        
-        // 順便更新一下餘額
         signer.getAddress().then(addr => updateAllStats(addr));
+    }
+
+    // --- 彈窗控制 ---
+    function openLeaderboard() {
+        document.getElementById("modalWinnerAddr").innerText = cachedWinner;
+        document.getElementById("modalHighestStreak").innerText = cachedHighest.toString();
+        document.getElementById("leaderModal").style.display = "block";
+    }
+
+    function openRules() {
+        document.getElementById("rulesModal").style.display = "block";
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+
+    // 點擊視窗外部關閉
+    window.onclick = function(event) {
+        if (event.target.className === "modal") {
+            event.target.style.display = "none";
+        }
     }
 </script>
 
 </body>
 </html>
+
