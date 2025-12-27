@@ -18,6 +18,7 @@
             min-height: 100vh;
             margin: 0;
             overflow-x: hidden;
+            perspective: 1000px; /* 全局視角 */
         }
         .container {
             max-width: 600px;
@@ -31,56 +32,38 @@
         }
         h1 { margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
 
-        /* --- 儀表板 --- */
+        /* --- 儀表板 & 數據條 --- */
         .dashboard {
             background: linear-gradient(to bottom, #330000, #1a0000);
-            border: 1px solid #FFA500;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            border: 1px solid #FFA500; border-radius: 10px; padding: 15px; margin-bottom: 15px;
+            display: flex; flex-direction: column; gap: 10px;
         }
         .dashboard-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 15px;
-            border-bottom: 1px dashed #555;
-            padding-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 15px;
+            border-bottom: 1px dashed #555; padding-bottom: 8px;
         }
         .dashboard-row:last-child { border-bottom: none; padding-bottom: 0; }
         .highlight-val { color: #00FF00; font-weight: bold; font-family: monospace; font-size: 16px; }
-
         .my-stats {
-            display: flex;
-            justify-content: space-around;
-            background: #400000;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            border: 1px solid #800000;
+            display: flex; justify-content: space-around; background: #400000; padding: 10px;
+            border-radius: 10px; margin-bottom: 20px; font-size: 14px; border: 1px solid #800000;
         }
 
-        /* --- 按鈕 --- */
+        /* --- 按鈕與輸入 --- */
         .action-bar { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .small-btn {
             background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; color: #FFD700;
             padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s;
         }
-        .small-btn:hover { background: rgba(255, 215, 0, 0.3); }
-
+        .small-btn:hover { background: rgba(255, 215, 0, 0.3); scale: 1.05; }
         .btn {
-            background: linear-gradient(180deg, #FFD700, #FFA500);
-            border: 1px solid #fff; padding: 15px 40px; font-size: 20px; font-weight: bold;
-            color: #800000; cursor: pointer; border-radius: 50px; margin: 15px 0;
-            transition: all 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 80%;
+            background: linear-gradient(180deg, #FFD700, #FFA500); border: 1px solid #fff;
+            padding: 15px 40px; font-size: 20px; font-weight: bold; color: #800000;
+            cursor: pointer; border-radius: 50px; margin: 15px 0; transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 80%;
         }
         .btn:active { transform: scale(0.95); }
         .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; }
-        
         .input-group { margin: 20px 0 10px 0; }
         input {
             padding: 12px; font-size: 20px; border-radius: 8px; border: 2px solid #FFD700;
@@ -88,70 +71,68 @@
         }
         .max-bet-hint { font-size: 13px; color: #FFA500; margin-top: 5px; }
         
-        /* --- 筊杯動畫區 (核心新功能) --- */
-        .jiaobei-container {
-            height: 120px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            perspective: 600px; /* 3D 視角 */
-            margin: 20px 0;
+        /* --- 🆕 擬真筊杯動畫區 --- */
+        .jiaobei-wrapper {
+            height: 150px; display: flex; justify-content: center; align-items: center;
+            gap: 50px; perspective: 800px; margin: 20px 0; position: relative;
         }
-
+        /* 筊杯本體 */
         .jiaobei {
-            width: 80px;
-            height: 40px;
-            background: #d63031; /* 筊杯紅 */
-            border-radius: 0 0 40px 40px; /* 半圓形 (凸面) */
-            position: relative;
-            transform-style: preserve-3d;
+            width: 80px; height: 40px; background: #d63031; border-radius: 0 0 40px 40px;
+            position: relative; transform-style: preserve-3d;
             box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3);
+            transition: transform 0.5s ease-out; /* 定格時的平滑過渡 */
         }
         /* 平面 (Yang) */
         .jiaobei::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #ff7675; /* 淺紅平面 */
-            border-radius: 0 0 40px 40px;
-            transform: rotateX(180deg); /* 翻轉到背面 */
-            backface-visibility: hidden; /* 背面隱藏 */
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ff7675; border-radius: 0 0 40px 40px;
+            transform: rotateX(180deg) translateZ(1px); /* 微調Z軸避免閃爍 */
+            backface-visibility: hidden;
         }
         /* 凸面 (Yin) */
         .jiaobei::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             border-radius: 0 0 40px 40px;
             background: radial-gradient(circle at 30% 30%, #ff5252, #b71540);
+            transform: translateZ(-1px);
             backface-visibility: hidden;
         }
 
-        /* 動畫定義 */
-        @keyframes toss {
-            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
-            25% { transform: rotateX(360deg) rotateY(180deg) rotateZ(45deg); }
-            50% { transform: rotateX(720deg) rotateY(360deg) rotateZ(0deg); }
-            75% { transform: rotateX(1080deg) rotateY(540deg) rotateZ(-45deg); }
-            100% { transform: rotateX(1440deg) rotateY(720deg) rotateZ(0); }
+        /* 🆕 新版拋擲動畫：向上飛起並瘋狂翻滾 */
+        @keyframes tumble-up {
+            0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1); }
+            20% { transform: translateY(-80px) rotateX(360deg) rotateY(180deg) rotateZ(45deg) scale(1.1); } /* 飛到最高點 */
+            40% { transform: translateY(-100px) rotateX(720deg) rotateY(360deg) rotateZ(90deg) scale(1.1); }
+            60% { transform: translateY(-60px) rotateX(1080deg) rotateY(540deg) rotateZ(180deg) scale(1.05); } /* 開始落下 */
+            80% { transform: translateY(-20px) rotateX(1440deg) rotateY(720deg) rotateZ(270deg) scale(1.02); }
+            100% { transform: translateY(0) rotateX(1800deg) rotateY(900deg) rotateZ(360deg) scale(1); } /* 回到地面 */
+        }
+        /* 影子動畫，增加立體感 */
+        @keyframes shadow-scale {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            20%, 40% { opacity: 0.3; transform: scale(0.6); } /* 飛高時影子變小變淡 */
         }
 
-        /* 狀態 Class */
-        .tossing { animation: toss 0.6s infinite linear; }
+        .tossing { animation: tumble-up 0.8s infinite linear; }
         
-        /* 結果定格 */
-        .state-yin { transform: rotateX(0deg); } /* 凸面朝上 */
-        .state-yang { transform: rotateX(180deg); } /* 平面朝上 */
-        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); box-shadow: 0 0 20px #FF00FF; } /* 立筊 */
+        /* 陰影層 */
+        .shadow-layer {
+            position: absolute; bottom: 10px; width: 80px; height: 20px;
+            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(5px);
+            z-index: -1;
+        }
+        .tossing-shadow { animation: shadow-scale 0.8s infinite linear; }
+
+        /* 結果定格狀態 */
+        .state-yin { transform: rotateX(0deg); } 
+        .state-yang { transform: rotateX(180deg); } 
+        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); box-shadow: 0 0 25px #FF00FF; }
 
         /* --- 結果文字區 --- */
         .result-area {
-            min-height: 80px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 15px;
-            font-size: 20px; font-weight: bold;
+            min-height: 80px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;
+            padding: 15px; font-size: 20px; font-weight: bold; margin-top: 20px;
         }
         .hash-box {
             background-color: #000; color: #00FF00; font-family: 'Courier New', monospace;
@@ -163,15 +144,31 @@
             background: rgba(218, 165, 32, 0.4); padding: 5px 12px; border-radius: 20px;
         }
 
-        /* --- Modal --- */
+        /* --- Modal 彈窗 --- */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { background: #300000; border: 2px solid #FFD700; margin: 15% auto; padding: 20px; width: 80%; max-width: 400px; border-radius: 15px; position: relative; box-shadow: 0 0 20px #FFD700; text-align: left;}
-        .close-btn { color: #aaa; float: right; font-size: 28px; cursor: pointer; }
-        .modal-h2 { text-align: center; border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; color: #FFD700;}
-        .rule-item { margin-bottom: 10px; font-size: 14px; line-height: 1.6; }
-        .leader-item { text-align: center; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; }
-        .leader-addr { color: #00FFFF; font-family: monospace; font-size: 18px; display: block; margin-bottom: 5px;}
-        .leader-val { font-size: 24px; color: #FFD700; font-weight: bold; }
+        .modal-content { background: #300000; border: 2px solid #FFD700; margin: 10% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 15px; position: relative; box-shadow: 0 0 30px #FFD700; text-align: left;}
+        .close-btn { color: #aaa; float: right; font-size: 32px; cursor: pointer; line-height: 32px;}
+        .close-btn:hover { color: #fff; }
+        .modal-h2 { text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 15px; margin-top: 0; color: #FFD700; font-size: 24px;}
+        
+        /* 規則樣式 */
+        .rule-group { margin-bottom: 20px; }
+        .rule-title { color: #FFD700; font-weight: bold; margin-bottom: 8px; font-size: 18px; border-left: 4px solid #FFD700; padding-left: 10px;}
+        .rule-item { font-size: 16px; line-height: 1.8; margin-left: 15px; color: #eee;}
+
+        /* 🆕 排行榜樣式 (殿堂感) */
+        .leader-section {
+            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px;
+            border: 1px solid #FFD700; text-align: center; margin-bottom: 20px;
+            box-shadow: inset 0 0 20px rgba(255,215,0,0.2);
+        }
+        .leader-badge { font-size: 40px; margin-bottom: 10px; }
+        .leader-label { color: #aaa; font-size: 14px; margin-bottom: 5px; }
+        .leader-addr { color: #00FFFF; font-family: monospace; font-size: 20px; word-break: break-all; font-weight: bold; text-shadow: 0 0 10px #00FFFF;}
+        .leader-val { font-size: 36px; color: #FFD700; font-weight: bold; text-shadow: 0 0 15px #FFD700;}
+        .my-rank-section {
+            border-top: 1px dashed #555; padding-top: 20px; text-align: center; color: #ccc;
+        }
 
         @keyframes flash { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
         .critical { color: #FF00FF; text-shadow: 0 0 15px #FF00FF; animation: flash 0.4s infinite; font-size: 26px; }
@@ -199,7 +196,7 @@
     </div>
 
     <div class="action-bar">
-        <button class="small-btn" onclick="openLeaderboard()">🏆 查看連勝霸主</button>
+        <button class="small-btn" onclick="openLeaderboard()">🏆 連勝殿堂排行榜</button>
         <button class="small-btn" onclick="openRules()">📜 遊戲規則說明</button>
     </div>
 
@@ -207,9 +204,15 @@
     
     <div id="gameArea" style="display:none;">
         
-        <div class="jiaobei-container">
-            <div id="blockA" class="jiaobei state-yin"></div>
-            <div id="blockB" class="jiaobei state-yang"></div>
+        <div class="jiaobei-wrapper">
+            <div style="position: relative;">
+                <div id="blockA" class="jiaobei state-yin"></div>
+                <div id="shadowA" class="shadow-layer"></div>
+            </div>
+            <div style="position: relative;">
+                <div id="blockB" class="jiaobei state-yang"></div>
+                <div id="shadowB" class="shadow-layer"></div>
+            </div>
         </div>
 
         <div class="input-group">
@@ -233,28 +236,54 @@
 <div id="leaderModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('leaderModal')">&times;</span>
-        <h2 class="modal-h2">🏆 當週連勝霸主</h2>
-        <div class="leader-item">
-            <div style="color:#aaa; font-size:12px;">霸主地址 (Winner)</div>
+        <h2 class="modal-h2">🏆 連勝殿堂 🏆</h2>
+        
+        <div class="leader-section">
+            <div class="leader-badge">👑</div>
+            <div class="leader-label">當前全網連勝霸主</div>
             <span class="leader-addr" id="modalWinnerAddr">---</span>
+            <div style="margin-top: 15px;">
+                <div class="leader-label">最高連勝紀錄</div>
+                <span class="leader-val" id="modalHighestStreak">0</span>
+                <span style="color:#FFD700">次</span>
+            </div>
+            <div style="font-size:12px; color:#FFD700; margin-top:10px;">* 霸主將於週結算時獨得 80% 獎池 *</div>
         </div>
-        <div class="leader-item">
-            <div style="color:#aaa; font-size:12px;">最高連勝次數 (Streak)</div>
-            <span class="leader-val" id="modalHighestStreak">0</span>
-            <div style="font-size:12px; color:#FFD700; margin-top:5px;">次</div>
+
+        <div class="my-rank-section">
+            <div style="font-size: 18px; color:#fff; margin-bottom: 10px;">👤 我的紀錄</div>
+            <div>目前連勝: <span id="modalMyStreak" style="color:#00FF00; font-weight:bold; font-size:20px;">0</span> 次</div>
+            <div style="font-size: 13px; margin-top:5px;">(繼續挑戰，爭奪霸主寶座！)</div>
         </div>
-        <div style="text-align:center; font-size:12px; color:#ccc;">* 週結算時霸主將獨得 80% 連勝獎池</div>
     </div>
 </div>
 
 <div id="rulesModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('rulesModal')">&times;</span>
-        <h2 class="modal-h2">📜 遊戲規則說明</h2>
-        <div class="rule-item"><strong style="color:#FFD700">【機率與賠率】</strong><br>⚡ <strong>立筊 (8倍)</strong>：0.25% (暴擊)<br>🙏 <strong>聖筊 (2倍)</strong>：24.75% (獲勝)<br>😊 <strong>笑筊 (0.5倍)</strong>：40% (退半)<br>🌑 <strong>陰筊 (0倍)</strong>：35% (未中)</div>
-        <div class="rule-item"><strong style="color:#FFD700">【連勝機制】</strong><br>聖筊與立筊累積連勝。笑/陰筊連勝歸零。</div>
-        <div class="rule-item"><strong style="color:#FFD700">【下注限制】</strong><br>最小 0.001 BNB，最大為獎池 1/10。</div>
-        <div class="rule-item"><strong style="color:#FFD700">【資金分配】</strong><br>75% 擲筊池 | 10% 連勝池<br>10% 年獸池 | 5% 推薦獎勵</div>
+        <h2 class="modal-h2">📜 遊戲規則</h2>
+        
+        <div class="rule-group">
+            <div class="rule-title">💎 獲勝與賠率</div>
+            <div class="rule-item">⚡ <strong>立筊 (暴擊)</strong>：獲利 <span style="color:#FF00FF; font-size:20px;">8 倍</span></div>
+            <div class="rule-item">🙏 <strong>聖筊 (獲勝)</strong>：獲利 <span style="color:#FFD700; font-size:20px;">2 倍</span></div>
+            <div class="rule-item">😊 <strong>笑筊 (平局)</strong>：退還一半本金</div>
+            <div class="rule-item">🌑 <strong>陰筊 (未中)</strong>：下次好運</div>
+        </div>
+        
+        <div class="rule-group">
+            <div class="rule-title">🔥 連勝機制</div>
+            <div class="rule-item">擲出「聖筊」或「立筊」累積連勝。</div>
+            <div class="rule-item">擲出「笑筊」或「陰筊」連勝歸零。</div>
+        </div>
+
+        <div class="rule-group">
+            <div class="rule-title">💰 資金分配</div>
+            <div class="rule-item">75% 擲筊獎池 (即時賠付)</div>
+            <div class="rule-item">10% 連勝獎池 (週冠軍獨得)</div>
+            <div class="rule-item">10% 供奉年獸 (累積大獎活動)</div>
+            <div class="rule-item">5% 推薦人獎勵</div>
+        </div>
     </div>
 </div>
 
@@ -276,6 +305,7 @@
     let currentMaxBet = 0; 
     let cachedWinner = "---";
     let cachedHighest = 0;
+    let myCurrentStreak = 0; // 暫存我的連勝
 
     async function connectWallet() {
         if (typeof ethers === 'undefined') { alert("Ethers.js 載入失敗"); return; }
@@ -300,13 +330,17 @@
         try {
             const balance = await provider.getBalance(userAddress);
             document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
+            
             const uStreak = await contract.userStreaks(userAddress);
-            document.getElementById("userStreak").innerText = uStreak[0].toString();
+            myCurrentStreak = uStreak[0].toString(); // 更新我的連勝
+            document.getElementById("userStreak").innerText = myCurrentStreak;
+            
             const sPool = await contract.streakPoolBalance();
             cachedHighest = await contract.highestStreak();
             const winner = await contract.currentWeeklyWinner();
             document.getElementById("streakPool").innerText = parseFloat(ethers.utils.formatEther(sPool)).toFixed(4);
-            cachedWinner = (winner === "0x0000000000000000000000000000000000000000") ? "尚無" : winner;
+            cachedWinner = (winner === "0x0000000000000000000000000000000000000000") ? "尚無 (虛位以待)" : winner;
+            
             const contractBalance = await provider.getBalance(CONTRACT_ADDRESS);
             const availablePool = contractBalance.sub(sPool);
             const maxBetBNB = availablePool.div(10);
@@ -322,31 +356,28 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- 動畫控制 ---
+    // --- 動畫控制 (優化版) ---
     function setBlocksState(state) {
         const bA = document.getElementById("blockA");
         const bB = document.getElementById("blockB");
+        const sA = document.getElementById("shadowA");
+        const sB = document.getElementById("shadowB");
         
-        // 移除所有狀態
         const classes = ["state-yin", "state-yang", "state-li", "tossing"];
-        bA.classList.remove(...classes);
-        bB.classList.remove(...classes);
+        bA.classList.remove(...classes); bB.classList.remove(...classes);
+        sA.classList.remove("tossing-shadow"); sB.classList.remove("tossing-shadow");
 
         if (state === "tossing") {
-            bA.classList.add("tossing");
-            bB.classList.add("tossing");
+            bA.classList.add("tossing"); bB.classList.add("tossing");
+            sA.classList.add("tossing-shadow"); sB.classList.add("tossing-shadow");
         } else if (state === "sheng") {
-            bA.classList.add("state-yang"); // 平
-            bB.classList.add("state-yin");  // 凸
+            bA.classList.add("state-yang"); bB.classList.add("state-yin");
         } else if (state === "xiao") {
-            bA.classList.add("state-yang"); // 平
-            bB.classList.add("state-yang"); // 平
+            bA.classList.add("state-yang"); bB.classList.add("state-yang");
         } else if (state === "yin") {
-            bA.classList.add("state-yin"); // 凸
-            bB.classList.add("state-yin"); // 凸
+            bA.classList.add("state-yin"); bB.classList.add("state-yin");
         } else if (state === "li") {
-            bA.classList.add("state-li");
-            bB.classList.add("state-li");
+            bA.classList.add("state-li"); bB.classList.add("state-li");
         }
     }
 
@@ -363,8 +394,7 @@
             document.getElementById("playBtn").disabled = true;
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
             
-            // 🎬 開始動畫
-            setBlocksState("tossing");
+            setBlocksState("tossing"); // 開始拋擲動畫
 
             const tx = await contract.play("0x0000000000000000000000000000000000000000", { 
                 value: ethers.utils.parseEther(betInput),
@@ -381,7 +411,7 @@
             console.error(error);
             alert("交易失敗");
             document.getElementById("resultDisplay").innerText = "❌ 交易未完成";
-            setBlocksState("sheng"); // 恢復預設
+            setBlocksState("sheng");
         } finally {
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
@@ -396,8 +426,6 @@
         const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
         
         let resultHtml = "";
-        
-        // 🎬 根據結果設定動畫定格
         if (resultType.includes("Li Jiao")) {
             setBlocksState("li");
             resultHtml = `<div class='critical'>⚡ 立筊暴擊 (8X) ⚡</div><div class='gold-text'>獲 ${payoutBNB} BNB ≈ ${goldGrams}g 黃金</div>`;
@@ -416,9 +444,12 @@
         signer.getAddress().then(addr => updateAllStats(addr));
     }
 
+    // --- Modal 控制 (更新數據顯示) ---
     function openLeaderboard() {
-        document.getElementById("modalWinnerAddr").innerText = cachedWinner;
+        const winnerText = cachedWinner === "尚無 (虛位以待)" ? cachedWinner : (cachedWinner.substring(0,8) + "..." + cachedWinner.substring(36));
+        document.getElementById("modalWinnerAddr").innerText = winnerText;
         document.getElementById("modalHighestStreak").innerText = cachedHighest.toString();
+        document.getElementById("modalMyStreak").innerText = myCurrentStreak.toString(); // 顯示我的紀錄
         document.getElementById("leaderModal").style.display = "block";
     }
     function openRules() { document.getElementById("rulesModal").style.display = "block"; }
@@ -428,5 +459,6 @@
 
 </body>
 </html>
+
 
 
