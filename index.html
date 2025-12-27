@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧧 金蛇迎春：鏈上擲筊博黃金 🧧</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" integrity="sha512-FDcVY+g7vc55I8ZYJZeQwWP+VAgghTiF9pr0Falo7tBvr2wMcbQYpKp0nSEx4q98+Jf/pcc9vF04q16T7jgwDTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 
     <style>
         body {
@@ -18,7 +18,7 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(0, 0, 0, 0.6); /* 加深背景 */
+            background: rgba(0, 0, 0, 0.6);
             padding: 20px;
             border-radius: 15px;
             border: 2px solid #FFD700;
@@ -152,10 +152,9 @@
 
 <script>
     // ==========================================
-    // ⚠️⚠️⚠️ 請在這裡填入你的合約地址 ⚠️⚠️⚠️
+    // ✅ 已自動填入你的合約地址
     // ==========================================
-    const CONTRACT_ADDRESS = "請在此處貼上你的0x開頭合約地址"; 
-    // 例如: const CONTRACT_ADDRESS = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B";
+    const CONTRACT_ADDRESS = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B"; 
 
     // 假定匯率 (前端顯示用)
     const BNB_PRICE_USD = 620; 
@@ -171,17 +170,16 @@
     let provider, signer, contract;
 
     async function connectWallet() {
+        if (typeof ethers === 'undefined') {
+            alert("⚠️ Ethers.js 載入失敗！\n請檢查您的網路連線，或嘗試使用 VPN。");
+            return;
+        }
+
         if (!window.ethereum) {
             alert("請安裝 MetaMask 錢包擴充功能!");
             return;
         }
         
-        // 檢查是否載入 ethers
-        if (typeof ethers === 'undefined') {
-            alert("Ethers.js 載入失敗，請檢查網路連線或重新整理頁面。");
-            return;
-        }
-
         try {
             provider = new ethers.providers.Web3Provider(window.ethereum);
             
@@ -193,7 +191,7 @@
             
             // 更新按鈕文字
             document.getElementById("connectBtn").innerText = "✅ 已連結: " + address.substring(0,6) + "...";
-            document.getElementById("connectBtn").disabled = true; // 防止重複點擊
+            document.getElementById("connectBtn").disabled = true; 
             
             // 顯示遊戲區域
             document.getElementById("gameArea").style.display = "block";
@@ -215,7 +213,6 @@
 
     async function loadStreak(address) {
         try {
-            // 對應合約 struct: currentStreak, lastPlayTime, lastPlayBlock, nonce
             const streakData = await contract.userStreaks(address);
             document.getElementById("userStreak").innerText = streakData[0].toString();
         } catch (e) { 
@@ -235,7 +232,6 @@
         if (!contract) return;
         
         const betValue = document.getElementById("betAmount").value;
-        // 檢查最小金額
         if (parseFloat(betValue) < 0.001) {
             alert("最小下注金額為 0.001 BNB");
             return;
@@ -244,13 +240,11 @@
         const referrer = "0x0000000000000000000000000000000000000000"; // 暫無推薦人
 
         try {
-            // UI 更新
             document.getElementById("resultDisplay").innerHTML = "🎲 擲筊中...<br><span style='font-size:16px; color:#FFD700'>請在錢包確認交易...</span>";
             document.getElementById("hashDisplay").innerText = "等待區塊鏈確認中...";
             document.getElementById("playBtn").disabled = true;
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
 
-            // 發送交易
             const tx = await contract.play(referrer, { 
                 value: ethers.utils.parseEther(betValue) 
             });
@@ -258,13 +252,10 @@
             console.log("交易已發送:", tx.hash);
             document.getElementById("resultDisplay").innerHTML = "🚀 交易已發送！<br><span style='font-size:16px; color:#ccc'>等待區塊打包 (約3秒)...</span>";
             
-            // 等待上鏈
             await tx.wait();
-            // 注意：結果顯示交給 setupEventListener 處理，這裡只負責送出
 
         } catch (error) {
             console.error(error);
-            // 錯誤處理
             let msg = error.data?.message || error.message;
             if (msg.includes("insufficient funds")) msg = "餘額不足！";
             if (msg.includes("user rejected")) msg = "使用者取消交易";
@@ -272,17 +263,14 @@
             alert("交易失敗: " + msg);
             document.getElementById("resultDisplay").innerText = "❌ 交易未完成";
             
-            // 重置按鈕
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
         }
     }
 
     function setupEventListener(myAddress) {
-        // 監聽 GameResult 事件
         contract.on("GameResult", (player, resultType, payout, rawRandom, betAmount, gameHash) => {
             
-            // 只處理當前用戶的事件
             if (player.toLowerCase() === myAddress.toLowerCase()) {
                 
                 // 1. 顯示雜湊亂碼
@@ -292,30 +280,25 @@
                 const payoutBNB = ethers.utils.formatEther(payout);
                 const goldGrams = (parseFloat(payoutBNB) * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
                 
-                // 3. 顯示結果文字與特效
+                // 3. 顯示結果
                 let resultHtml = "";
                 
                 if (resultType.includes("Li Jiao")) {
-                    // 立筊暴擊
                     resultHtml = `<div class='critical'>⚡ 天降祥瑞！立筊暴擊 (8X) ⚡</div>`;
                     resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
                 } else if (resultType.includes("Sheng Jiao")) {
-                    // 聖筊
                     resultHtml = `<div class='sheng-jiao'>🙏 聖筊！獲利翻倍 (2X)</div>`;
                     resultHtml += `<div class='gold-text'>獲得 ${payoutBNB} BNB ≈ ${goldGrams} 克黃金</div>`;
                 } else if (resultType.includes("Xiao Jiao")) {
-                    // 笑筊
                     resultHtml = `<div class='xiao-jiao'>😊 笑筊 - 虎爺笑了 (退回一半)</div>`;
                     resultHtml += `<div style='font-size:14px; margin-top:5px;'>連勝中斷</div>`;
                 } else {
-                    // 陰筊
                     resultHtml = `<div class='yin-jiao'>🌑 陰筊 - 下次好運</div>`;
                     resultHtml += `<div style='font-size:14px; margin-top:5px;'>連勝歸零</div>`;
                 }
                 
                 document.getElementById("resultDisplay").innerHTML = resultHtml;
                 
-                // 4. 更新狀態並重置按鈕
                 updateStats(myAddress);
                 document.getElementById("playBtn").disabled = false;
                 document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
