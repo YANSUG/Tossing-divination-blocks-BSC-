@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧧 金馬迎春：鏈上擲筊博黃金 🧧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🧧 金蛇迎春：鏈上擲筊博黃金 🧧</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 
     <style>
@@ -19,11 +19,13 @@
             margin: 0;
             overflow-x: hidden;
             perspective: 1000px;
+            -webkit-font-smoothing: antialiased; /* 字體優化 */
+            touch-action: manipulation; /* 禁止雙擊縮放 */
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75); /* 加深背景 */
             padding: 25px;
             border-radius: 20px;
             border: 2px solid #FFD700;
@@ -31,6 +33,13 @@
             position: relative;
         }
         h1 { margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
+
+        /* --- 預載遮罩 --- */
+        #loadingMask {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #300; z-index: 9999; display: flex; justify-content: center; align-items: center;
+            color: #FFD700; font-size: 20px; flex-direction: column;
+        }
 
         /* --- 倒數計時 --- */
         .countdown-bar {
@@ -64,71 +73,79 @@
             background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; color: #FFD700;
             padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s;
         }
-        .small-btn:hover { background: rgba(255, 215, 0, 0.3); scale: 1.05; }
+        .small-btn:active { background: rgba(255, 215, 0, 0.3); transform: scale(0.95); }
+        
         .ref-btn {
             background: linear-gradient(90deg, #FF8C00, #FFD700);
             color: #500000; font-weight: bold; border: none;
             box-shadow: 0 0 10px #FF8C00;
         }
-        .ref-btn:hover { box-shadow: 0 0 15px #FFD700; scale: 1.05; }
+        
         .btn {
             background: linear-gradient(180deg, #FFD700, #FFA500); border: 1px solid #fff;
             padding: 15px 40px; font-size: 20px; font-weight: bold; color: #800000;
             cursor: pointer; border-radius: 50px; width: 80%;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 0.1s;
+            /* 防止手機點擊高亮 */
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:active { transform: scale(0.95); }
-        .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; }
+        .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; transform: none; }
 
-        /* --- 遊戲區 --- */
+        /* --- 遊戲區優化 --- */
         .game-stage {
             background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px 0;
             margin: 20px 0; border: 1px solid #800000; position: relative;
             overflow: hidden;
+            /* 創建新的渲染層，避免重繪 */
+            transform: translateZ(0); 
         }
         
-        /* 筊杯動畫容器 */
         .jiaobei-wrapper {
             height: 160px;
             display: flex; justify-content: center; align-items: center;
             gap: 60px;
-            perspective: 1200px;
+            perspective: 1000px; /* 降低一點 perspective 減少邊緣鋸齒 */
             position: relative; margin-bottom: 20px;
         }
 
-        /* 筊杯本體通用設定 */
         .jiaobei {
             width: 200px; height: 100px;
             background: transparent; border-radius: 0; box-shadow: none;
             position: relative; transform-style: preserve-3d;
-            transition: transform 0.5s ease-out;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 加入彈性曲線 */
+            /* 🔥 關鍵優化：告訴瀏覽器這個元素會變形，開啟 GPU 加速 */
+            will-change: transform; 
         }
         
-        /* --- 貼圖設定 --- */
-        /* 通用：平面 (Yang) */
+        .jiaobei::before, .jiaobei::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            backface-visibility: hidden;
+            /* 優化圖片渲染 */
+            image-rendering: -webkit-optimize-contrast;
+        }
+        
+        /* 平面 (Yang) */
         .jiaobei::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('https://i.ibb.co/twv7fJR8/Yang.png');
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            transform: rotateX(180deg) translateZ(1px); backface-visibility: hidden;
+            transform: rotateX(180deg) translateZ(1px);
         }
         
-        /* 通用：凸面 (Yin) */
+        /* 凸面 (Yin) */
         .jiaobei::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('https://i.ibb.co/twFczdTG/Yin.png');
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            transform: translateZ(-1px); backface-visibility: hidden;
+            transform: translateZ(-1px);
         }
 
         /* 鏡像翻轉右邊的筊杯 */
         #blockB::before { transform: scaleX(-1) rotateX(180deg) translateZ(1px); }
         #blockB::after { transform: scaleX(-1) translateZ(-1px); }
 
-        /* 陰影 */
         .shadow-layer {
             position: absolute; bottom: -10px; width: 160px; height: 30px;
             background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(10px); z-index: -1;
+            transition: all 0.3s;
         }
 
         .integrated-result {
@@ -136,18 +153,24 @@
             align-items: center; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* 動畫 Keyframes */
+        /* 優化動畫 Keyframes */
         @keyframes tumble-up {
             0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1); }
-            20% { transform: translateY(-100px) rotateX(360deg) rotateY(180deg) rotateZ(45deg) scale(1.1); }
-            60% { transform: translateY(-80px) rotateX(1080deg) rotateY(540deg) rotateZ(180deg) scale(1.05); }
-            100% { transform: translateY(0) rotateX(1800deg) rotateY(900deg) rotateZ(360deg) scale(1); }
+            25% { transform: translateY(-80px) rotateX(360deg) rotateY(180deg) rotateZ(20deg) scale(1.1); }
+            50% { transform: translateY(-40px) rotateX(720deg) rotateY(360deg) rotateZ(-20deg) scale(1.05); }
+            75% { transform: translateY(-10px) rotateX(1080deg) rotateY(540deg) rotateZ(10deg) scale(1.02); }
+            100% { transform: translateY(0) rotateX(1440deg) rotateY(720deg) rotateZ(0) scale(1); }
         }
-        @keyframes shadow-scale { 0%, 100% { opacity: 0.8; transform: scale(1); } 20%, 40% { opacity: 0.3; transform: scale(0.6); } }
-        .tossing { animation: tumble-up 0.8s infinite linear; }
-        .tossing-shadow { animation: shadow-scale 0.8s infinite linear; }
         
-        /* 結果狀態 */
+        @keyframes shadow-pulse { 
+            0%, 100% { opacity: 0.8; transform: scale(1); } 
+            50% { opacity: 0.3; transform: scale(0.6); } 
+        }
+        
+        .tossing { animation: tumble-up 0.6s infinite linear; }
+        .tossing-shadow { animation: shadow-pulse 0.6s infinite linear; }
+        
+        /* 結果狀態 (強制 transform) */
         .state-yin { transform: rotateX(0deg); } 
         .state-yang { transform: rotateX(180deg); } 
         .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); filter: drop-shadow(0 0 15px #FF00FF); }
@@ -156,18 +179,18 @@
         input {
             padding: 12px; font-size: 20px; border-radius: 8px; border: 2px solid #FFD700;
             background: #200000; color: #fff; text-align: center; width: 180px; font-weight: bold;
+            -moz-appearance: textfield;
         }
         .max-bet-hint { font-size: 13px; color: #FFA500; margin-top: 5px; }
         
         /* Modal */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { background: #300000; border: 2px solid #FFD700; margin: 5% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 15px; text-align: left; box-shadow: 0 0 30px #FFD700; max-height: 80vh; overflow-y: auto;}
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        .modal-content { background: #300000; border: 2px solid #FFD700; margin: 10% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 15px; text-align: left; box-shadow: 0 0 30px #FFD700; max-height: 80vh; overflow-y: auto;}
         .close-btn { float: right; font-size: 32px; cursor: pointer; color: #aaa; }
         .leader-addr { color: #00FFFF; font-family: monospace; font-size: 20px; font-weight: bold; }
         .leader-section { background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; border: 1px solid #FFD700; text-align: center; margin-bottom: 20px; }
         .history-list { margin-top: 20px; font-size: 14px; border-top: 1px solid #555; padding-top: 10px; }
         .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #444; color: #ddd; }
-        .history-item:last-child { border-bottom: none; }
         .h-addr { color: #00FFFF; font-family: monospace; }
         .h-val { color: #FFD700; font-weight: bold; }
         .hash-box { margin-top: 10px; font-size: 10px; color: #555; }
@@ -181,6 +204,11 @@
     </style>
 </head>
 <body>
+
+<div id="loadingMask">
+    <div style="font-size: 40px; margin-bottom: 20px;">🎲</div>
+    <div>資源載入中...</div>
+</div>
 
 <div class="container">
     <h1>🐯 虎爺賜福擲筊台 🐯</h1>
@@ -295,13 +323,24 @@
 </div>
 
 <script>
-    // ✅ 正式合約地址 (BSC Mainnet)
+    // ✅ 強制預載圖片 (解決卡頓的關鍵)
+    const imgUrls = ['https://i.ibb.co/twv7fJR8/Yang.png', 'https://i.ibb.co/twFczdTG/Yin.png'];
+    let imagesLoaded = 0;
+    imgUrls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+            imagesLoaded++;
+            if(imagesLoaded === imgUrls.length) {
+                document.getElementById('loadingMask').style.display = 'none';
+            }
+        };
+    });
+
     const CONTRACT_ADDRESS = "0x51938462eFcB3941DaccDA83480109E3F3C640C5"; 
-    
     const BNB_PRICE_USD = 620; 
     const GOLD_PRICE_USD_PER_GRAM = 85; 
 
-    // ✅ ABI
     const ABI = [
         "function play(address referrer) external payable",
         "function userStreaks(address) view returns (uint64, uint64, uint32, uint32, uint32)",
@@ -338,12 +377,9 @@
             checkReferralParam(address);
 
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            
-            // ✅ 並行讀取數據
             await updateAllStats(address);
             startCountdown(); 
             
-            // ✅ 監聽事件
             contract.on("GameResult", () => { updateAllStats(address); });
             contract.on("WeeklyWinnerPaid", (winner, amount) => {
                 const amt = ethers.utils.formatEther(amount);
@@ -376,7 +412,6 @@
         }, () => { alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr); });
     }
 
-    // ✅ 核心優化：並行讀取
     async function updateAllStats(userAddress) {
         if (!contract) return;
         try {
@@ -463,13 +498,30 @@
         } catch (e) { console.error(e); container.innerHTML = "<div style='text-align:center; color:red;'>讀取失敗</div>"; }
     }
 
+    // 🔥 核心動畫優化：重置狀態機制
     function setBlocksState(state) {
-        const bA = document.getElementById("blockA"); const bB = document.getElementById("blockB");
-        const sA = document.getElementById("shadowA"); const sB = document.getElementById("shadowB");
+        const bA = document.getElementById("blockA"); 
+        const bB = document.getElementById("blockB");
+        const sA = document.getElementById("shadowA"); 
+        const sB = document.getElementById("shadowB");
+        
+        // 1. 強制移除所有動畫與狀態
         const classes = ["state-yin", "state-yang", "state-li", "tossing"];
-        bA.classList.remove(...classes); bB.classList.remove(...classes);
-        sA.classList.remove("tossing-shadow"); sB.classList.remove("tossing-shadow");
-        if (state === "tossing") { bA.classList.add("tossing"); bB.classList.add("tossing"); sA.classList.add("tossing-shadow"); sB.classList.add("tossing-shadow"); }
+        bA.classList.remove(...classes); 
+        bB.classList.remove(...classes);
+        sA.classList.remove("tossing-shadow"); 
+        sB.classList.remove("tossing-shadow");
+
+        // 2. 強制瀏覽器重繪 (Reflow) - 解決動畫卡住的關鍵 hack
+        void bA.offsetWidth; 
+
+        // 3. 重新加入目標狀態
+        if (state === "tossing") { 
+            bA.classList.add("tossing"); 
+            bB.classList.add("tossing"); 
+            sA.classList.add("tossing-shadow"); 
+            sB.classList.add("tossing-shadow"); 
+        }
         else if (state === "sheng") { bA.classList.add("state-yang"); bB.classList.add("state-yin"); }
         else if (state === "xiao") { bA.classList.add("state-yang"); bB.classList.add("state-yang"); }
         else if (state === "yin") { bA.classList.add("state-yin"); bB.classList.add("state-yin"); }
@@ -486,9 +538,10 @@
             document.getElementById("resultDisplay").innerHTML = "<span style='color:#FFD700;'>🎲 擲筊中... (請確認交易)</span>";
             document.getElementById("playBtn").disabled = true;
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
+            
+            // 啟動動畫
             setBlocksState("tossing");
             
-            // 🔥 關鍵修正: 提高 Gas Limit 避免預估錯誤
             const tx = await contract.play(globalReferrer, { 
                 value: ethers.utils.parseEther(betInput), 
                 gasLimit: 800000 
@@ -516,11 +569,17 @@
         document.getElementById("hashDisplay").innerText = "Hash: " + gameHash.substring(0, 15) + "..."; 
         const payoutBNB = ethers.utils.formatEther(payout);
         let resultHtml = "";
-        if (resultType.includes("Li Jiao")) { setBlocksState("li"); resultHtml = `<div class='critical'>⚡ 立筊 (8X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
-        else if (resultType.includes("Sheng Jiao")) { setBlocksState("sheng"); resultHtml = `<div class='sheng-jiao'>🙏 聖筊 (2X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
-        else if (resultType.includes("Xiao Jiao")) { setBlocksState("xiao"); resultHtml = `<div class='xiao-jiao'>😊 笑筊 (退半)</div><div style='color:#ccc; font-size:14px;'>連勝中斷</div>`; }
-        else { setBlocksState("yin"); resultHtml = `<div class='yin-jiao'>🌑 陰筊 (無)</div><div style='color:#ccc; font-size:14px;'>連勝歸零</div>`; }
+        let newState = "";
+
+        if (resultType.includes("Li Jiao")) { newState = "li"; resultHtml = `<div class='critical'>⚡ 立筊 (8X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
+        else if (resultType.includes("Sheng Jiao")) { newState = "sheng"; resultHtml = `<div class='sheng-jiao'>🙏 聖筊 (2X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
+        else if (resultType.includes("Xiao Jiao")) { newState = "xiao"; resultHtml = `<div class='xiao-jiao'>😊 笑筊 (退半)</div><div style='color:#ccc; font-size:14px;'>連勝中斷</div>`; }
+        else { newState = "yin"; resultHtml = `<div class='yin-jiao'>🌑 陰筊 (無)</div><div style='color:#ccc; font-size:14px;'>連勝歸零</div>`; }
+        
+        // 停止動畫並顯示結果
+        setBlocksState(newState);
         document.getElementById("resultDisplay").innerHTML = resultHtml;
+        
         signer.getAddress().then(addr => updateAllStats(addr));
     }
 
@@ -538,5 +597,6 @@
 
 </body>
 </html>
+
 
 
