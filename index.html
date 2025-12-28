@@ -301,7 +301,7 @@
     const BNB_PRICE_USD = 620; 
     const GOLD_PRICE_USD_PER_GRAM = 85; 
 
-    // ✅ ABI 更新: 加入正確的 struct 回傳定義
+    // ✅ ABI
     const ABI = [
         "function play(address referrer) external payable",
         "function userStreaks(address) view returns (uint64, uint64, uint32, uint32, uint32)",
@@ -339,11 +339,11 @@
 
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
             
-            // ✅ 首次載入執行
+            // ✅ 並行讀取數據
             await updateAllStats(address);
             startCountdown(); 
             
-            // ✅ 監聽事件，即時更新 (不需要 setInterval 頻繁輪詢)
+            // ✅ 監聽事件
             contract.on("GameResult", () => { updateAllStats(address); });
             contract.on("WeeklyWinnerPaid", (winner, amount) => {
                 const amt = ethers.utils.formatEther(amount);
@@ -376,11 +376,10 @@
         }, () => { alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr); });
     }
 
-    // ✅ 核心優化：並行讀取 (Promise.all)
+    // ✅ 核心優化：並行讀取
     async function updateAllStats(userAddress) {
         if (!contract) return;
         try {
-            // 使用 Promise.all 同時發送請求，大幅減少等待時間
             const [balance, uStreak, sPool, high, winner, contractBal, nextTimeBig] = await Promise.all([
                 provider.getBalance(userAddress),
                 contract.userStreaks(userAddress),
@@ -391,27 +390,22 @@
                 contract.nextSettleTime()
             ]);
 
-            // 1. 更新餘額
             document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
             
-            // 2. 更新個人連勝
-            myCurrentStreak = uStreak[2].toString(); // currentStreak
-            myBestStreak = uStreak[3].toString();    // personalMax
+            myCurrentStreak = uStreak[2].toString(); 
+            myBestStreak = uStreak[3].toString();    
             document.getElementById("userStreak").innerText = myCurrentStreak;
             document.getElementById("modalMyStreak").innerText = myCurrentStreak;
             document.getElementById("modalMyBest").innerText = myBestStreak;
             
-            // 3. 更新獎池
             const sPoolBNB = parseFloat(ethers.utils.formatEther(sPool));
             const sPoolGold = (sPoolBNB * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
             document.getElementById("streakPool").innerText = sPoolBNB.toFixed(4);
             document.getElementById("streakPoolGold").innerText = `(≈ ${sPoolGold}g 黃金)`;
 
-            // 4. 更新榜單
             cachedHighest = high;
             cachedWinner = (winner === "0x0000000000000000000000000000000000000000") ? "尚無 (虛位以待)" : winner;
             
-            // 5. 更新最大下注額
             const availablePool = contractBal.sub(sPool);
             const maxBetBNB = availablePool.div(10);
             currentMaxBet = parseFloat(ethers.utils.formatEther(maxBetBNB));
@@ -457,7 +451,6 @@
             const events = await contract.queryFilter(filter);
             if (events.length === 0) { container.innerHTML = "<div style='text-align:center; color:#888;'>尚無歷史冠軍紀錄</div>"; return; }
             let html = "";
-            // 反轉陣列，顯示最新的
             for (const evt of events.reverse()) {
                 const winner = evt.args.winner;
                 const amount = ethers.utils.formatEther(evt.args.amount);
@@ -495,18 +488,23 @@
             document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
             setBlocksState("tossing");
             
-            // 使用 safe gasLimit
+            // 🔥 關鍵修正: 提高 Gas Limit 避免預估錯誤
             const tx = await contract.play(globalReferrer, { 
-                value: ethers.utils.parseEther(betInput), gasLimit: 500000 
+                value: ethers.utils.parseEther(betInput), 
+                gasLimit: 800000 
             });
+            
             document.getElementById("resultDisplay").innerHTML = "🚀 等待結果...";
             const receipt = await tx.wait();
             const event = receipt.events.find(e => e.event === 'GameResult');
             if (event) displayResult(event.args);
         } catch (error) {
-            console.error(error); alert("交易失敗: " + (error.data?.message || error.message));
-            document.getElementById("resultDisplay").innerHTML = "<span style='color:red'>❌ 交易失敗</span>";
-            setBlocksState("sheng"); // 恢復靜止
+            console.error(error); 
+            if (!error.message.includes("User denied")) {
+                alert("交易失敗: " + (error.data?.message || error.message));
+            }
+            document.getElementById("resultDisplay").innerHTML = "<span style='color:red'>❌ 交易取消或失敗</span>";
+            setBlocksState("sheng"); 
         } finally {
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
@@ -523,8 +521,6 @@
         else if (resultType.includes("Xiao Jiao")) { setBlocksState("xiao"); resultHtml = `<div class='xiao-jiao'>😊 笑筊 (退半)</div><div style='color:#ccc; font-size:14px;'>連勝中斷</div>`; }
         else { setBlocksState("yin"); resultHtml = `<div class='yin-jiao'>🌑 陰筊 (無)</div><div style='color:#ccc; font-size:14px;'>連勝歸零</div>`; }
         document.getElementById("resultDisplay").innerHTML = resultHtml;
-        
-        // 立即刷新數據
         signer.getAddress().then(addr => updateAllStats(addr));
     }
 
