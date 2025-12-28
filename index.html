@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧧 金蛇迎春：鏈上擲筊博黃金 🧧</title>
+    <title>🧧 金馬迎春：鏈上擲筊博黃金 🧧</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 
     <style>
@@ -295,16 +295,15 @@
 </div>
 
 <script>
-    // ✅ 更新正式主網合約地址
+    // ✅ 正式合約地址 (BSC Mainnet)
     const CONTRACT_ADDRESS = "0x51938462eFcB3941DaccDA83480109E3F3C640C5"; 
     
     const BNB_PRICE_USD = 620; 
     const GOLD_PRICE_USD_PER_GRAM = 85; 
 
-    // ✅ 更新 ABI 以匹配 V4.1 合約 (包含 personalMaxStreak)
+    // ✅ ABI 更新: 加入正確的 struct 回傳定義
     const ABI = [
         "function play(address referrer) external payable",
-        // userStreaks 回傳結構: lastPlayTime, lastPlayBlock, currentStreak, personalMaxStreak, nonce
         "function userStreaks(address) view returns (uint64, uint64, uint32, uint32, uint32)",
         "function streakPoolBalance() view returns (uint256)",
         "function currentWeeklyWinner() view returns (address)",
@@ -339,9 +338,12 @@
             checkReferralParam(address);
 
             contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            
+            // ✅ 首次載入執行
             await updateAllStats(address);
             startCountdown(); 
             
+            // ✅ 監聽事件，即時更新 (不需要 setInterval 頻繁輪詢)
             contract.on("GameResult", () => { updateAllStats(address); });
             contract.on("WeeklyWinnerPaid", (winner, amount) => {
                 const amt = ethers.utils.formatEther(amount);
@@ -374,32 +376,43 @@
         }, () => { alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr); });
     }
 
+    // ✅ 核心優化：並行讀取 (Promise.all)
     async function updateAllStats(userAddress) {
+        if (!contract) return;
         try {
-            const balance = await provider.getBalance(userAddress);
+            // 使用 Promise.all 同時發送請求，大幅減少等待時間
+            const [balance, uStreak, sPool, high, winner, contractBal, nextTimeBig] = await Promise.all([
+                provider.getBalance(userAddress),
+                contract.userStreaks(userAddress),
+                contract.streakPoolBalance(),
+                contract.highestStreak(),
+                contract.currentWeeklyWinner(),
+                provider.getBalance(CONTRACT_ADDRESS),
+                contract.nextSettleTime()
+            ]);
+
+            // 1. 更新餘額
             document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
             
-            // 讀取 V4.1 結構: [0]time, [1]block, [2]currentStreak, [3]personalMax, [4]nonce
-            const uStreak = await contract.userStreaks(userAddress);
-            myCurrentStreak = uStreak[2].toString();
-            myBestStreak = uStreak[3].toString();
-            
+            // 2. 更新個人連勝
+            myCurrentStreak = uStreak[2].toString(); // currentStreak
+            myBestStreak = uStreak[3].toString();    // personalMax
             document.getElementById("userStreak").innerText = myCurrentStreak;
             document.getElementById("modalMyStreak").innerText = myCurrentStreak;
             document.getElementById("modalMyBest").innerText = myBestStreak;
             
-            const sPool = await contract.streakPoolBalance();
+            // 3. 更新獎池
             const sPoolBNB = parseFloat(ethers.utils.formatEther(sPool));
             const sPoolGold = (sPoolBNB * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
             document.getElementById("streakPool").innerText = sPoolBNB.toFixed(4);
             document.getElementById("streakPoolGold").innerText = `(≈ ${sPoolGold}g 黃金)`;
 
-            cachedHighest = await contract.highestStreak();
-            const winner = await contract.currentWeeklyWinner();
+            // 4. 更新榜單
+            cachedHighest = high;
             cachedWinner = (winner === "0x0000000000000000000000000000000000000000") ? "尚無 (虛位以待)" : winner;
             
-            const contractBalance = await provider.getBalance(CONTRACT_ADDRESS);
-            const availablePool = contractBalance.sub(sPool);
+            // 5. 更新最大下注額
+            const availablePool = contractBal.sub(sPool);
             const maxBetBNB = availablePool.div(10);
             currentMaxBet = parseFloat(ethers.utils.formatEther(maxBetBNB));
             const hintEl = document.getElementById("maxBetDisplay");
@@ -410,7 +423,10 @@
                 hintEl.innerHTML = `⚠️ 單筆上限: <span style='color:#00FF00'>${currentMaxBet.toFixed(4)}</span> BNB`;
                 hintEl.style.color = "#FFA500";
             }
-        } catch (e) { console.error(e); }
+            
+        } catch (e) { 
+            console.error("更新數據失敗:", e); 
+        }
     }
 
     async function startCountdown() {
@@ -441,6 +457,7 @@
             const events = await contract.queryFilter(filter);
             if (events.length === 0) { container.innerHTML = "<div style='text-align:center; color:#888;'>尚無歷史冠軍紀錄</div>"; return; }
             let html = "";
+            // 反轉陣列，顯示最新的
             for (const evt of events.reverse()) {
                 const winner = evt.args.winner;
                 const amount = ethers.utils.formatEther(evt.args.amount);
@@ -489,7 +506,7 @@
         } catch (error) {
             console.error(error); alert("交易失敗: " + (error.data?.message || error.message));
             document.getElementById("resultDisplay").innerHTML = "<span style='color:red'>❌ 交易失敗</span>";
-            setBlocksState("sheng");
+            setBlocksState("sheng"); // 恢復靜止
         } finally {
             document.getElementById("playBtn").disabled = false;
             document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
@@ -506,6 +523,8 @@
         else if (resultType.includes("Xiao Jiao")) { setBlocksState("xiao"); resultHtml = `<div class='xiao-jiao'>😊 笑筊 (退半)</div><div style='color:#ccc; font-size:14px;'>連勝中斷</div>`; }
         else { setBlocksState("yin"); resultHtml = `<div class='yin-jiao'>🌑 陰筊 (無)</div><div style='color:#ccc; font-size:14px;'>連勝歸零</div>`; }
         document.getElementById("resultDisplay").innerHTML = resultHtml;
+        
+        // 立即刷新數據
         signer.getAddress().then(addr => updateAllStats(addr));
     }
 
@@ -523,4 +542,5 @@
 
 </body>
 </html>
+
 
