@@ -2,523 +2,191 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧧 金蛇迎春：鏈上擲筊博黃金 🧧</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🧧 擲筊博杯：新春試手氣</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        /* --- 基礎設定 --- */
-        body {
-            background-color: #500000;
-            background-image: linear-gradient(135deg, #800000 25%, #500000 100%);
-            color: #FFD700;
-            font-family: 'Microsoft JhengHei', sans-serif;
-            text-align: center;
-            padding: 20px;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
-            perspective: 1000px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 25px;
-            border-radius: 20px;
-            border: 2px solid #FFD700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-            position: relative;
-        }
-        h1 { margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
-
-        /* --- 倒數計時 --- */
-        .countdown-bar {
-            background: rgba(0, 0, 0, 0.6); border: 1px solid #FFD700; color: #fff;
-            padding: 8px; border-radius: 50px; font-size: 14px; margin-bottom: 15px;
-            display: inline-block; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
-        }
-        .countdown-time { color: #00FF00; font-family: monospace; font-weight: bold; font-size: 16px; }
-
-        /* --- 儀表板 --- */
-        .dashboard {
-            background: linear-gradient(to bottom, #330000, #1a0000);
-            border: 1px solid #FFA500; border-radius: 10px; padding: 15px; margin-bottom: 15px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .dashboard-row {
-            display: flex; justify-content: space-between; align-items: center; font-size: 15px;
-            border-bottom: 1px dashed #555; padding-bottom: 8px;
-        }
-        .highlight-val { color: #00FF00; font-weight: bold; font-family: monospace; font-size: 16px; }
-        .gold-subtext { font-size: 12px; color: #ccc; margin-left: 5px; }
-
-        .my-stats {
-            display: flex; justify-content: space-around; background: #400000; padding: 10px;
-            border-radius: 10px; margin-bottom: 20px; font-size: 14px; border: 1px solid #800000;
-        }
-
-        /* --- 按鈕區 --- */
-        .action-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
-        .small-btn {
-            background: rgba(255, 215, 0, 0.1); border: 1px solid #FFD700; color: #FFD700;
-            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s;
-        }
-        .small-btn:hover { background: rgba(255, 215, 0, 0.3); scale: 1.05; }
-        .ref-btn {
-            background: linear-gradient(90deg, #FF8C00, #FFD700);
-            color: #500000; font-weight: bold; border: none;
-            box-shadow: 0 0 10px #FF8C00;
-        }
-        .ref-btn:hover { box-shadow: 0 0 15px #FFD700; scale: 1.05; }
-        .btn {
-            background: linear-gradient(180deg, #FFD700, #FFA500); border: 1px solid #fff;
-            padding: 15px 40px; font-size: 20px; font-weight: bold; color: #800000;
-            cursor: pointer; border-radius: 50px; width: 80%;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.2s;
-        }
-        .btn:active { transform: scale(0.95); }
-        .btn:disabled { background: #555; color: #888; cursor: not-allowed; border-color: #555; }
-
-        /* --- 遊戲區 --- */
-        .game-stage {
-            background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px 0;
-            margin: 20px 0; border: 1px solid #800000; position: relative;
-            overflow: hidden;
-        }
+        :root { --red: #D90429; --gold: #FFD700; --bg: #2b0505; --dark: #1a0000; }
+        body { background: var(--bg); background-image: radial-gradient(circle at center, #500 0%, #1a0000 100%); color: #fff; font-family: 'Noto Sans TC', sans-serif; margin: 0; padding: 15px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 500px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); border: 1px solid var(--red); border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(217, 4, 41, 0.3); }
         
-        /* 筊杯動畫容器 */
-        .jiaobei-wrapper {
-            height: 160px;
-            display: flex; justify-content: center; align-items: center;
-            gap: 60px;
-            perspective: 1200px;
-            position: relative; margin-bottom: 20px;
-        }
-
-        /* 筊杯本體通用設定 */
-        .jiaobei {
-            width: 200px; height: 100px;
-            background: transparent; border-radius: 0; box-shadow: none;
-            position: relative; transform-style: preserve-3d;
-            transition: transform 0.5s ease-out;
-        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--gold); margin: 0; text-shadow: 0 0 10px var(--red); font-size: 28px; }
+        .sub { font-size: 12px; color: #ccc; margin-top: 5px; }
         
-        /* --- 貼圖設定 --- */
-        /* 通用：平面 (Yang) */
-        .jiaobei::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://i.ibb.co/twv7fJR8/Yang.png');
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            /* 預設變形：翻轉到背面 */
-            transform: rotateX(180deg) translateZ(1px); backface-visibility: hidden;
-        }
+        .main-card { background: linear-gradient(135deg, #800000 0%, #300000 100%); border: 2px solid var(--gold); border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px; position: relative; }
+        .pool-title { font-size: 12px; color: #ffcccc; letter-spacing: 1px; }
+        .pool-val { font-family: 'Roboto Mono'; font-size: 36px; font-weight: bold; color: #fff; margin: 5px 0; }
         
-        /* 通用：凸面 (Yin) */
-        .jiaobei::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://i.ibb.co/twFczdTG/Yin.png');
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            /* 預設變形：在正面 */
-            transform: translateZ(-1px); backface-visibility: hidden;
-        }
-
-        /* ✅✅✅ 關鍵修改：強制鏡像翻轉右邊的筊杯 (Block B) 的貼圖 ✅✅✅ */
-        #blockB::before {
-            /* 加上 scaleX(-1) 進行水平翻轉，並保持原本的 rotateX 和 translateZ */
-            transform: scaleX(-1) rotateX(180deg) translateZ(1px);
-        }
-        #blockB::after {
-            /* 加上 scaleX(-1) 進行水平翻轉，並保持原本的 translateZ */
-            transform: scaleX(-1) translateZ(-1px);
-        }
-        /* ✅✅✅ 修改結束 ✅✅✅ */
-
-
-        /* 陰影 */
-        .shadow-layer {
-            position: absolute; bottom: -10px; width: 160px; height: 30px;
-            background: rgba(0,0,0,0.5); border-radius: 50%; filter: blur(10px); z-index: -1;
-        }
-
-        .integrated-result {
-            min-height: 40px; display: flex; flex-direction: column; justify-content: center;
-            align-items: center; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        /* 動畫 Keyframes */
-        @keyframes tumble-up {
-            0% { transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1); }
-            20% { transform: translateY(-100px) rotateX(360deg) rotateY(180deg) rotateZ(45deg) scale(1.1); }
-            60% { transform: translateY(-80px) rotateX(1080deg) rotateY(540deg) rotateZ(180deg) scale(1.05); }
-            100% { transform: translateY(0) rotateX(1800deg) rotateY(900deg) rotateZ(360deg) scale(1); }
-        }
-        @keyframes shadow-scale { 0%, 100% { opacity: 0.8; transform: scale(1); } 20%, 40% { opacity: 0.3; transform: scale(0.6); } }
-        .tossing { animation: tumble-up 0.8s infinite linear; }
-        .tossing-shadow { animation: shadow-scale 0.8s infinite linear; }
+        .streak-info { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-top: 15px; }
+        .s-box { text-align: center; }
+        .s-label { font-size: 10px; color: #aaa; }
+        .s-val { font-size: 18px; font-weight: bold; color: var(--gold); font-family: 'Roboto Mono'; }
         
-        /* 結果狀態 */
-        .state-yin { transform: rotateX(0deg); } 
-        .state-yang { transform: rotateX(180deg); } 
-        .state-li { transform: rotateX(-90deg) rotateY(0deg) rotateZ(90deg); filter: drop-shadow(0 0 15px #FF00FF); }
-
-        .input-group { margin: 10px 0; }
-        input {
-            padding: 12px; font-size: 20px; border-radius: 8px; border: 2px solid #FFD700;
-            background: #200000; color: #fff; text-align: center; width: 180px; font-weight: bold;
-        }
-        .max-bet-hint { font-size: 13px; color: #FFA500; margin-top: 5px; }
+        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .bet-btn { background: #333; border: 1px solid #555; color: #fff; padding: 12px; border-radius: 10px; cursor: pointer; font-family: 'Roboto Mono'; transition: 0.2s; }
+        .bet-btn:hover { border-color: var(--gold); background: #444; }
+        .bet-btn.active { background: var(--red); border-color: var(--gold); font-weight: bold; }
         
-        /* Modal */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { background: #300000; border: 2px solid #FFD700; margin: 5% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 15px; text-align: left; box-shadow: 0 0 30px #FFD700; max-height: 80vh; overflow-y: auto;}
-        .close-btn { float: right; font-size: 32px; cursor: pointer; color: #aaa; }
-        .leader-addr { color: #00FFFF; font-family: monospace; font-size: 20px; font-weight: bold; }
-        .leader-section { background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; border: 1px solid #FFD700; text-align: center; margin-bottom: 20px; }
-        .history-list { margin-top: 20px; font-size: 14px; border-top: 1px solid #555; padding-top: 10px; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #444; color: #ddd; }
-        .history-item:last-child { border-bottom: none; }
-        .h-addr { color: #00FFFF; font-family: monospace; }
-        .h-val { color: #FFD700; font-weight: bold; }
-        .hash-box { margin-top: 10px; font-size: 10px; color: #555; }
-        .ref-info { font-size: 12px; color: #00FF00; margin-bottom: 5px; display: none; }
-
-        @keyframes flash { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
-        .critical { color: #FF00FF; text-shadow: 0 0 15px #FF00FF; animation: flash 0.4s infinite; font-size: 24px; }
-        .sheng-jiao { color: #FFD700; text-shadow: 0 0 10px #FFD700; font-size: 22px; }
-        .xiao-jiao { color: #FFA500; font-size: 20px; }
-        .yin-jiao { color: #aaa; font-size: 20px; }
+        #playBtn { width: 100%; background: linear-gradient(90deg, #FFD700, #FFA500); color: #500; font-size: 20px; font-weight: bold; padding: 15px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); margin-bottom: 20px; transition: transform 0.1s; }
+        #playBtn:active { transform: scale(0.95); }
+        
+        .result-box { min-height: 40px; text-align: center; font-size: 16px; margin-bottom: 20px; font-weight: bold; color: var(--gold); text-shadow: 0 0 5px #000; }
+        
+        .ref-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; color: #aaa; margin-bottom: 20px; word-break: break-all; }
+        
+        .events-log { max-height: 150px; overflow-y: auto; font-size: 12px; border-top: 1px dashed #555; padding-top: 10px; }
+        .log-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-win { color: #0f0; } .log-lose { color: #888; }
+        
+        #connectBtn { width: 100%; background: #222; color: #fff; padding: 10px; border: 1px solid #444; border-radius: 20px; cursor: pointer; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🐯 虎爺賜福擲筊台 🐯</h1>
+    <header>
+        <h1>🧧 擲筊博杯 V4</h1>
+        <div class="sub">聖筊翻倍 • 立筊 8 倍 • 連勝搶週獎</div>
+    </header>
 
-    <div class="countdown-bar">
-        🏆 本週結算倒數: <span id="countdownDisplay" class="countdown-time">計算中...</span>
+    <div class="main-card">
+        <div class="pool-title">本週連勝獎池</div>
+        <div class="pool-val"><span id="streakPool">0.000</span> <span style="font-size:16px">BNB</span></div>
+        <div class="streak-info">
+            <div class="s-box"><div class="s-label">全網最高</div><div class="s-val" id="globalHigh">0</div></div>
+            <div class="s-box"><div class="s-label">你的連勝</div><div class="s-val" id="myStreak">0</div></div>
+            <div class="s-box"><div class="s-label">個人紀錄</div><div class="s-val" id="myBest">0</div></div>
+        </div>
     </div>
+
+    <div class="result-box" id="resultDisplay">準備擲筊...</div>
+
+    <div class="bet-area">
+        <button class="bet-btn active" onclick="setBet('0.001')">0.001 BNB</button>
+        <button class="bet-btn" onclick="setBet('0.005')">0.005 BNB</button>
+        <button class="bet-btn" onclick="setBet('0.01')">0.01 BNB</button>
+        <button class="bet-btn" onclick="setBet('0.05')">0.05 BNB</button>
+    </div>
+
+    <button id="playBtn" onclick="play()">🙏 誠心擲筊</button>
     
-    <div class="dashboard">
-        <div class="dashboard-row">
-            <span>💎 連勝累積獎池:</span>
-            <div style="text-align: right;">
-                <span class="highlight-val" id="streakPool">0.0000</span> BNB<br>
-                <span class="gold-subtext" id="streakPoolGold">(≈ 0g 黃金)</span>
-            </div>
-        </div>
-    </div>
+    <button id="connectBtn" onclick="connectWallet()">🦊 連結錢包</button>
 
-    <div class="my-stats">
-        <div>💰 餘額: <span id="userBalance" style="color:#fff">---</span></div>
-        <div>🎲 連勝: <span id="userStreak" style="color:#fff">0</span></div>
-    </div>
+    <div class="ref-box" id="refLink" onclick="copyRef()">連結錢包後顯示推廣連結 (點擊複製)</div>
 
-    <div class="action-bar">
-        <button class="small-btn ref-btn" onclick="copyReferralLink()">📋 複製推廣連結 (賺5%)</button>
-        <button class="small-btn" onclick="openLeaderboard()">🏆 榜單 & 紀錄</button>
-        <button class="small-btn" onclick="openRules()">📜 規則</button>
-    </div>
-
-    <button id="connectBtn" class="btn" onclick="connectWallet()">🦊 連結錢包 (Connect)</button>
-    
-    <div id="gameArea" style="display:none;">
-        
-        <div id="refDisplay" class="ref-info">🔗 已綁定推薦人: 0x...</div>
-
-        <div class="game-stage">
-            <div class="jiaobei-wrapper">
-                <div style="position: relative;">
-                    <div id="blockA" class="jiaobei state-yin"></div>
-                    <div id="shadowA" class="shadow-layer"></div>
-                </div>
-                <div style="position: relative;">
-                    <div id="blockB" class="jiaobei state-yang"></div>
-                    <div id="shadowB" class="shadow-layer"></div>
-                </div>
-            </div>
-            
-            <div class="integrated-result" id="resultDisplay">
-                <span style="font-size: 16px; color:#ccc; font-weight:normal;">準備擲筊...</span>
-            </div>
-            <div class="hash-box" id="hashDisplay"></div>
-        </div>
-
-        <div class="input-group">
-            <label>下注金額 (BNB)</label><br>
-            <input type="number" id="betAmount" value="0.001" step="0.001" min="0.001">
-            <div class="max-bet-hint" id="maxBetDisplay">正在計算最大限額...</div>
-        </div>
-
-        <button id="playBtn" class="btn" onclick="playGame()">🙏 誠心擲筊 (Play)</button>
-    </div>
-</div>
-
-<div id="leaderModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('leaderModal')">&times;</span>
-        <h2 style="text-align:center; color:#FFD700; margin-top:0;">🏆 連勝殿堂 🏆</h2>
-        <div class="leader-section">
-            <div style="font-size:40px; margin-bottom:10px;">👑</div>
-            <div style="color:#aaa; font-size:14px; margin-bottom:5px;">當前全網連勝霸主</div>
-            <div class="leader-addr" id="modalWinnerAddr">---</div>
-            <div style="margin-top: 15px;">
-                <div style="color:#aaa; font-size:14px;">最高連勝紀錄</div>
-                <span style="font-size:36px; color:#FFD700; font-weight:bold;" id="modalHighestStreak">0</span>
-                <span style="color:#FFD700">次</span>
-            </div>
-        </div>
-        <div style="text-align:center; color:#ccc; margin-bottom: 20px;">
-            <div style="font-size:16px; color:#fff;">👤 我的紀錄: <span id="modalMyStreak" style="color:#00FF00; font-weight:bold;">0</span> 次</div>
-        </div>
-        <div style="border-top: 1px dashed #555; padding-top: 10px;">
-            <h3 style="color:#FFD700; text-align:center; margin:10px 0;">📜 歷屆冠軍紀錄</h3>
-            <div id="historyListContainer" class="history-list">
-                <div style="text-align:center; color:#888;">正在載入歷史數據...</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="rulesModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('rulesModal')">&times;</span>
-        <h2 style="text-align:center; color:#FFD700; margin-top:0;">📜 遊戲規則</h2>
-        <div style="margin-bottom:20px;">
-            <div style="color:#FFD700; font-weight:bold; margin-bottom:8px;">💎 獲勝與賠率</div>
-            <div style="margin-left:10px; color:#eee; line-height:1.8;">
-                ⚡ <strong>立筊 (暴擊)</strong>：<span style="color:#FF00FF;">8 倍</span><br>
-                🙏 <strong>聖筊 (獲勝)</strong>：<span style="color:#FFD700;">2 倍</span><br>
-                😊 <strong>笑筊 (平局)</strong>：退還一半<br>
-                🌑 <strong>陰筊 (未中)</strong>：下次好運
-            </div>
-        </div>
-        <div>
-            <div style="color:#FFD700; font-weight:bold; margin-bottom:8px;">💰 資金分配</div>
-            <div style="margin-left:10px; color:#eee; line-height:1.8;">
-                75% 擲筊池 | 10% 連勝池<br>
-                10% 年獸池 | <span style="color:#00FF00">5% 推薦獎勵</span>
-            </div>
-        </div>
+    <div class="events-log" id="eventLogs">
+        <div style="text-align:center; color:#666">暫無紀錄</div>
     </div>
 </div>
 
 <script>
-    const CONTRACT_ADDRESS = "0x84b31049Eb8CB25cF86d360534e383d8b0e10924"; 
-    
-    const BNB_PRICE_USD = 620; 
-    const GOLD_PRICE_USD_PER_GRAM = 85; 
-
+    const ADDR = "0x51938462eFcB3941DaccDA83480109E3F3C640C5";
     const ABI = [
         "function play(address referrer) external payable",
-        "function userStreaks(address) view returns (uint256, uint256, uint256, uint256)",
         "function streakPoolBalance() view returns (uint256)",
-        "function currentWeeklyWinner() view returns (address)",
         "function highestStreak() view returns (uint256)",
-        "function nextSettleTime() view returns (uint256)", 
-        "event GameResult(address indexed player, string resultType, uint256 payout, uint256 rawRandom, uint256 betAmount, bytes32 gameHash)",
-        "event WeeklyWinnerPaid(address indexed winner, uint256 amount)"
+        "function userStreaks(address) view returns (uint64, uint64, uint32, uint32, uint32)",
+        "event GameResult(address indexed player, string resultType, uint256 payout, uint256 rawRandom, uint256 betAmount, bytes32 gameHash)"
     ];
 
     let provider, signer, contract;
-    let currentMaxBet = 0; 
-    let cachedWinner = "---";
-    let cachedHighest = 0;
-    let myCurrentStreak = 0;
-    let countdownInterval;
-    let globalReferrer = "0x0000000000000000000000000000000000000000";
+    let selectedBet = "0.001";
+    let myAddr = "";
+
+    // 取得網址列的 referrer
+    const urlParams = new URLSearchParams(window.location.search);
+    const referrer = urlParams.get('ref') || "0x0000000000000000000000000000000000000000";
+
+    function setBet(amt) {
+        selectedBet = amt;
+        document.querySelectorAll('.bet-btn').forEach(b => {
+            b.classList.remove('active');
+            if(b.innerText.includes(amt)) b.classList.add('active');
+        });
+    }
 
     async function connectWallet() {
-        if (typeof ethers === 'undefined') { alert("Ethers.js 載入失敗"); return; }
-        if (!window.ethereum) { alert("請安裝 MetaMask!"); return; }
+        if (!window.ethereum) return alert("請安裝 MetaMask");
         try {
             provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []); 
+            await provider.send("eth_requestAccounts", []);
             signer = provider.getSigner();
-            const address = await signer.getAddress();
+            myAddr = await signer.getAddress();
+            contract = new ethers.Contract(ADDR, ABI, signer);
             
-            document.getElementById("connectBtn").innerText = "✅ 已連結";
-            document.getElementById("connectBtn").disabled = true; 
-            document.getElementById("gameArea").style.display = "block";
-
-            checkReferralParam(address);
-
-            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-            await updateAllStats(address);
-            startCountdown(); 
+            document.getElementById("connectBtn").innerText = "✅ " + myAddr.substring(0,6)+"...";
             
-            contract.on("GameResult", () => { updateAllStats(address); });
-            contract.on("WeeklyWinnerPaid", (winner, amount) => {
-                const amt = ethers.utils.formatEther(amount);
-                alert(`✨ 恭喜！本週結算自動觸發！\n霸主 ${winner.substring(0,6)}... 已獲得 ${amt} BNB\n新賽季已經開始！`);
-                updateAllStats(address);
-                startCountdown(); 
-            });
-
-        } catch (error) { console.error(error); alert("連結失敗: " + error.message); }
+            // 生成推廣連結
+            const refUrl = window.location.origin + window.location.pathname + "?ref=" + myAddr;
+            document.getElementById("refLink").innerText = "推廣連結: " + refUrl;
+            
+            updateData();
+            listenEvents();
+            setInterval(updateData, 5000);
+        } catch(e) { console.error(e); }
     }
 
-    function checkReferralParam(myAddr) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const refParam = urlParams.get('ref');
-        if (refParam && ethers.utils.isAddress(refParam) && refParam.toLowerCase() !== myAddr.toLowerCase()) {
-            globalReferrer = refParam;
-            const displayRef = refParam.substring(0, 6) + "..." + refParam.substring(38);
-            document.getElementById("refDisplay").innerText = `🔗 已綁定推薦人: ${displayRef}`;
-            document.getElementById("refDisplay").style.display = "block";
+    async function updateData() {
+        if(!contract) return;
+        try {
+            const pool = await contract.streakPoolBalance();
+            const high = await contract.highestStreak();
+            const uData = await contract.userStreaks(myAddr);
+            
+            document.getElementById("streakPool").innerText = parseFloat(ethers.utils.formatEther(pool)).toFixed(3);
+            document.getElementById("globalHigh").innerText = high.toString();
+            // uData[2] = currentStreak, uData[3] = personalMax
+            document.getElementById("myStreak").innerText = uData[2].toString();
+            document.getElementById("myBest").innerText = uData[3].toString();
+        } catch(e){}
+    }
+
+    function listenEvents() {
+        contract.on("GameResult", (player, res, pay, rnd, bet, hash) => {
+            if(player.toLowerCase() === myAddr.toLowerCase()) {
+                const win = pay.gt(0);
+                const txt = win ? `🎉 ${res} (+${ethers.utils.formatEther(pay)} BNB)` : `😭 ${res}`;
+                document.getElementById("resultDisplay").innerText = txt;
+                document.getElementById("resultDisplay").style.color = win ? "#0f0" : "#888";
+                
+                addLog(txt, win);
+                updateData(); // 立即更新
+            }
+        });
+    }
+
+    function addLog(msg, win) {
+        const div = document.getElementById("eventLogs");
+        const time = new Date().toLocaleTimeString();
+        const html = `<div class="log-item ${win?'log-win':'log-lose'}"><span>${time}</span><span>${msg}</span></div>`;
+        div.innerHTML = html + div.innerHTML;
+    }
+
+    async function play() {
+        if(!contract) return alert("請先連結錢包");
+        try {
+            document.getElementById("resultDisplay").innerText = "🙏 擲筊中...";
+            document.getElementById("resultDisplay").style.color = "#FFD700";
+            
+            const tx = await contract.play(referrer, { value: ethers.utils.parseEther(selectedBet) });
+            await tx.wait();
+        } catch(e) {
+            document.getElementById("resultDisplay").innerText = "❌ 交易失敗";
+            alert("錯誤: " + (e.data?.message || e.message));
         }
     }
 
-    async function copyReferralLink() {
-        if (!signer) { alert("請先連結錢包！"); return; }
-        const myAddr = await signer.getAddress();
-        const baseUrl = window.location.origin + window.location.pathname;
-        const refLink = `${baseUrl}?ref=${myAddr}`;
-        navigator.clipboard.writeText(refLink).then(() => {
-            alert("✅ 連結已複製！\n發送給朋友，他們下注金額的 5% 將自動發送給你！");
-        }, () => { alert("複製失敗，請手動複製網址並加上 ?ref=" + myAddr); });
-    }
-
-    async function updateAllStats(userAddress) {
-        try {
-            const balance = await provider.getBalance(userAddress);
-            document.getElementById("userBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
-            const uStreak = await contract.userStreaks(userAddress);
-            myCurrentStreak = uStreak[0].toString();
-            document.getElementById("userStreak").innerText = myCurrentStreak;
-            
-            const sPool = await contract.streakPoolBalance();
-            const sPoolBNB = parseFloat(ethers.utils.formatEther(sPool));
-            const sPoolGold = (sPoolBNB * BNB_PRICE_USD / GOLD_PRICE_USD_PER_GRAM).toFixed(4);
-            document.getElementById("streakPool").innerText = sPoolBNB.toFixed(4);
-            document.getElementById("streakPoolGold").innerText = `(≈ ${sPoolGold}g 黃金)`;
-
-            cachedHighest = await contract.highestStreak();
-            const winner = await contract.currentWeeklyWinner();
-            cachedWinner = (winner === "0x0000000000000000000000000000000000000000") ? "尚無 (虛位以待)" : winner;
-            
-            const contractBalance = await provider.getBalance(CONTRACT_ADDRESS);
-            const availablePool = contractBalance.sub(sPool);
-            const maxBetBNB = availablePool.div(10);
-            currentMaxBet = parseFloat(ethers.utils.formatEther(maxBetBNB));
-            const hintEl = document.getElementById("maxBetDisplay");
-            if (currentMaxBet <= 0.001) {
-                hintEl.innerHTML = `⚠️ 池底乾枯，僅限 <span style='color:#fff'>0.001</span> BNB`;
-                hintEl.style.color = "#FF4444";
-            } else {
-                hintEl.innerHTML = `⚠️ 單筆上限: <span style='color:#00FF00'>${currentMaxBet.toFixed(4)}</span> BNB`;
-                hintEl.style.color = "#FFA500";
-            }
-        } catch (e) { console.error(e); }
-    }
-
-    async function startCountdown() {
-        if (!contract) return;
-        try {
-            const nextTimeBig = await contract.nextSettleTime();
-            const nextTime = nextTimeBig.toNumber();
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                const now = Math.floor(Date.now() / 1000);
-                const diff = nextTime - now;
-                if (diff <= 0) { document.getElementById("countdownDisplay").innerText = "等待玩家觸發結算..."; return; }
-                const d = Math.floor(diff / (3600 * 24));
-                const h = Math.floor((diff % (3600 * 24)) / 3600);
-                const m = Math.floor((diff % 3600) / 60);
-                const s = diff % 60;
-                document.getElementById("countdownDisplay").innerText = `${d}天 ${h}時 ${m}分 ${s}秒`;
-            }, 1000);
-        } catch (e) { console.error("Countdown Error:", e); }
-    }
-
-    async function fetchHistory() {
-        if (!contract) return;
-        const container = document.getElementById("historyListContainer");
-        container.innerHTML = "<div style='text-align:center; color:#888;'>正在查詢區塊鏈紀錄...</div>";
-        try {
-            const filter = contract.filters.WeeklyWinnerPaid();
-            const events = await contract.queryFilter(filter);
-            if (events.length === 0) { container.innerHTML = "<div style='text-align:center; color:#888;'>尚無歷史冠軍紀錄</div>"; return; }
-            let html = "";
-            for (const evt of events.reverse()) {
-                const winner = evt.args.winner;
-                const amount = ethers.utils.formatEther(evt.args.amount);
-                const block = await evt.getBlock();
-                const date = new Date(block.timestamp * 1000);
-                const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}`;
-                html += `<div class="history-item"><span style="color:#aaa; width:90px;">${dateStr}</span><span class="h-addr">${winner.substring(0,6)}...${winner.substring(38)}</span><span class="h-val">${parseFloat(amount).toFixed(4)} BNB</span></div>`;
-            }
-            container.innerHTML = html;
-        } catch (e) { console.error(e); container.innerHTML = "<div style='text-align:center; color:red;'>讀取失敗</div>"; }
-    }
-
-    function setBlocksState(state) {
-        const bA = document.getElementById("blockA"); const bB = document.getElementById("blockB");
-        const sA = document.getElementById("shadowA"); const sB = document.getElementById("shadowB");
-        const classes = ["state-yin", "state-yang", "state-li", "tossing"];
-        bA.classList.remove(...classes); bB.classList.remove(...classes);
-        sA.classList.remove("tossing-shadow"); sB.classList.remove("tossing-shadow");
-        if (state === "tossing") { bA.classList.add("tossing"); bB.classList.add("tossing"); sA.classList.add("tossing-shadow"); sB.classList.add("tossing-shadow"); }
-        else if (state === "sheng") { bA.classList.add("state-yang"); bB.classList.add("state-yin"); }
-        else if (state === "xiao") { bA.classList.add("state-yang"); bB.classList.add("state-yang"); }
-        else if (state === "yin") { bA.classList.add("state-yin"); bB.classList.add("state-yin"); }
-        else if (state === "li") { bA.classList.add("state-li"); bB.classList.add("state-li"); }
-    }
-
-    async function playGame() {
-        if (!contract) return;
-        const betInput = document.getElementById("betAmount").value;
-        const betValue = parseFloat(betInput);
-        if (betValue < 0.001) { alert("最小下注金額為 0.001 BNB"); return; }
-        if (betValue > currentMaxBet && currentMaxBet > 0.001) { alert(`金額過大！上限 ${currentMaxBet.toFixed(4)}`); return; }
-        try {
-            document.getElementById("resultDisplay").innerHTML = "<span style='color:#FFD700;'>🎲 擲筊中... (請確認交易)</span>";
-            document.getElementById("playBtn").disabled = true;
-            document.getElementById("playBtn").innerText = "⏳ 交易確認中...";
-            setBlocksState("tossing");
-            
-            const tx = await contract.play(globalReferrer, { 
-                value: ethers.utils.parseEther(betInput), gasLimit: 500000 
-            });
-            document.getElementById("resultDisplay").innerHTML = "🚀 等待結果...";
-            const receipt = await tx.wait();
-            const event = receipt.events.find(e => e.event === 'GameResult');
-            if (event) displayResult(event.args);
-        } catch (error) {
-            console.error(error); alert("交易失敗");
-            document.getElementById("resultDisplay").innerHTML = "<span style='color:red'>❌ 交易失敗</span>";
-            setBlocksState("sheng");
-        } finally {
-            document.getElementById("playBtn").disabled = false;
-            document.getElementById("playBtn").innerText = "🙏 誠心擲筊 (Play)";
+    function copyRef() {
+        const txt = document.getElementById("refLink").innerText.replace("推廣連結: ", "");
+        if(txt.includes("http")) {
+            navigator.clipboard.writeText(txt);
+            alert("連結已複製！");
         }
     }
-
-    function displayResult(args) {
-        const { resultType, payout, gameHash } = args;
-        document.getElementById("hashDisplay").innerText = "Hash: " + gameHash.substring(0, 15) + "..."; 
-        const payoutBNB = ethers.utils.formatEther(payout);
-        let resultHtml = "";
-        if (resultType.includes("Li Jiao")) { setBlocksState("li"); resultHtml = `<div class='critical'>⚡ 立筊 (8X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
-        else if (resultType.includes("Sheng Jiao")) { setBlocksState("sheng"); resultHtml = `<div class='sheng-jiao'>🙏 聖筊 (2X)</div><div style='color:#fff; font-size:16px;'>獲 ${payoutBNB} BNB</div>`; }
-        else if (resultType.includes("Xiao Jiao")) { setBlocksState("xiao"); resultHtml = `<div class='xiao-jiao'>😊 笑筊 (退半)</div><div style='color:#ccc; font-size:14px;'>連勝中斷</div>`; }
-        else { setBlocksState("yin"); resultHtml = `<div class='yin-jiao'>🌑 陰筊 (無)</div><div style='color:#ccc; font-size:14px;'>連勝歸零</div>`; }
-        document.getElementById("resultDisplay").innerHTML = resultHtml;
-        signer.getAddress().then(addr => updateAllStats(addr));
-    }
-
-    function openLeaderboard() {
-        const winnerText = cachedWinner === "尚無 (虛位以待)" ? cachedWinner : (cachedWinner.substring(0,8) + "..." + cachedWinner.substring(36));
-        document.getElementById("modalWinnerAddr").innerText = winnerText;
-        document.getElementById("modalHighestStreak").innerText = cachedHighest.toString();
-        document.getElementById("modalMyStreak").innerText = myCurrentStreak.toString();
-        document.getElementById("leaderModal").style.display = "block";
-        fetchHistory();
-    }
-    function openRules() { document.getElementById("rulesModal").style.display = "block"; }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
-    window.onclick = function(e) { if(e.target.className === "modal") e.target.style.display="none"; }
 </script>
 
 </body>
 </html>
+
